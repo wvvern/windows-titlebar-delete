@@ -1,0 +1,91 @@
+// Forge build for one Minecraft version, shared by every subproject in versions/<mc>.
+// Uses Essential's fork of Architectury Loom; the version-agnostic core (../core) is compiled into the jar.
+plugins {
+    java
+    id("gg.essential.loom")
+    id("dev.architectury.architectury-pack200")
+}
+
+val baseGroup: String by project
+val modid: String by project
+val modVersion: String by project
+val mcVersion: String by project
+val mappingsVersion: String by project
+val forgeVersion: String by project
+
+group = baseGroup
+version = "$modVersion+$mcVersion"
+base.archivesName.set("$modid-forge")
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(8))
+}
+
+sourceSets.main {
+    java.srcDir(rootProject.file("src/main/java"))
+    java.srcDir(rootProject.file("src/v${mcVersion.replace('.', '_')}/java"))
+    java.srcDir(rootProject.file("../core/src/main/java"))
+    resources.srcDir(rootProject.file("src/main/resources"))
+    resources.srcDir(rootProject.file("../core/src/main/resources"))
+    // Forge in dev finds mcmod.info and assets only next to the classes.
+    output.setResourcesDir(sourceSets.main.flatMap { it.java.classesDirectory })
+}
+
+loom {
+    runConfigs {
+        remove(getByName("server"))
+    }
+    forge {
+        pack200Provider.set(dev.architectury.pack200.java.Pack200Adapter())
+    }
+}
+
+dependencies {
+    minecraft("com.mojang:minecraft:$mcVersion")
+    mappings(mappingsVersion)
+    forge(forgeVersion)
+}
+
+tasks.withType(JavaCompile::class) {
+    options.encoding = "UTF-8"
+}
+
+tasks.processResources {
+    inputs.property("version", project.version)
+    inputs.property("mcversion", mcVersion)
+    inputs.property("modid", modid)
+    filesMatching("mcmod.info") {
+        expand(inputs.properties)
+    }
+}
+
+tasks.jar {
+    archiveClassifier.set("dev")
+    destinationDirectory.set(layout.buildDirectory.dir("intermediates"))
+}
+
+tasks.named<net.fabricmc.loom.task.RemapJarTask>("remapJar") {
+    archiveClassifier.set("")
+}
+
+// Loom 0.10's own runClient trips Gradle 8's task validation, so this runs the same launch as a plain JavaExec.
+tasks.register<JavaExec>("runClientDev") {
+    group = "minecraft"
+    description = "Starts the $mcVersion Forge dev client."
+    dependsOn("classes")
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("net.fabricmc.devlaunchinjector.Main")
+    workingDir = file("run")
+    doFirst { workingDir.mkdirs() }
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(8)) })
+    jvmArgs(
+        "-Dfabric.dli.config=${file(".gradle/loom-cache/launch.cfg").absolutePath}",
+        "-Dfabric.dli.env=client",
+        "-Dfabric.dli.main=net.minecraft.launchwrapper.Launch",
+    )
+    // -Pharness=<dir> enables the file-driven test harness at a fixed window size.
+    if (project.hasProperty("harness")) {
+        systemProperty("wtd.harness", File(project.property("harness") as String).absolutePath)
+        args("--width", "1280", "--height", "720")
+    }
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "modid": "${modid}",
+    "name": "Windows Titlebar Delete",
+    "description": "Removes the Windows titlebar from the game window.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "logoFile": "assets/windowstitlebardelete/icon.png",
+    "url": "",
+    "authorList": [],
+    "credits": ""
+  }
+]
