@@ -1,0 +1,13 @@
+.gradle/
+build/
+out/
+run/
+runs/
+.idea/
+*.iml
+.vscode/
+.kotlin/
+.claude/*
+!.claude/skills/
+# Stonecutter generates per-version sources/build dirs
+**/versions/*/build/
