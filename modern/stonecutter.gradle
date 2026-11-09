@@ -9,6 +9,13 @@ plugins {
 // The version whose code is active (uncommented) in src/. "Set active project to X" tasks rewrite this line.
 stonecutter.active '26.3'
 
+stonecutter.parameters {
+    // In code, `/*$ minecraft*/ "26.3";` becomes the Minecraft version of the node.
+    def node = new Properties()
+    file("versions/${current.project}/gradle.properties").withInputStream { node.load(it) }
+    swaps.put('minecraft', "\"${node.minecraft_version}\";")
+}
+
 // One folder with the release jar of every loader and Minecraft version: build/libs/.
 tasks.register('collectJars', Copy) {
     group = 'build'

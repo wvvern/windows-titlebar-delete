@@ -44,6 +44,12 @@ if (loader == 'common') {
     sourceSets.main.java.srcDir rootProject.file('../core/src/main/java')
     // The core resources (the icon) go into the jar next to the core classes.
     sourceSets.main.resources.srcDir rootProject.file('../core/src/main/resources')
+} else if (project.hasProperty('harness')) {
+    // -Pharness=<dir> starts the test harness of the core (core/dev/Harness) in a window with a fixed size.
+    loom.runs.named('client') {
+        property('wtd.harness', new File(project.property('harness') as String).absolutePath)
+        programArgs('--width', '1280', '--height', '720')
+    }
 }
 
 java {

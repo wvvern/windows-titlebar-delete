@@ -7,6 +7,6 @@ import wvv.windowstitlebardelete.modern.ModernHooks;
 public final class TitlebarFabric implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        ModernHooks.bootstrap();
+        ModernHooks.bootstrap("Fabric");
     }
 }

@@ -87,8 +87,11 @@ function Set-Options([string]$runDir) {
         foreach ($line in Get-Content $file) { $i = $line.IndexOf(':'); if ($i -gt 0) { $options[$line.Substring(0, $i)] = $line.Substring($i + 1) } }
     }
     $wanted = @{ onboardAccessibility = "false"; narrator = "0"; soundCategory_master = "0.0"; pauseOnLostFocus = "false";
-                 tutorialStep = "none"; skipMultiplayerWarning = "true"; joinedFirstServer = "true"; fullscreen = "false"; guiScale = "0" }
+                 tutorialStep = "none"; skipMultiplayerWarning = "true"; joinedFirstServer = "true"; fullscreen = "false"; guiScale = "0";
+                 exclusiveFullscreen = "false" }
     foreach ($k in $wanted.Keys) { $options[$k] = $wanted[$k] }
+    # With no fullscreen resolution, fullscreen uses the current mode of the monitor, so the real screen does not change its mode.
+    $options.Remove("fullscreenResolution")
     ($options.GetEnumerator() | ForEach-Object { "$($_.Key):$($_.Value)" }) | Set-Content -Encoding ascii $file
     if (-not (Select-String -Path $file -Pattern "^soundCategory_master:0\.0$" -Quiet)) { throw "options.txt in $runDir does not set the sound to 0" }
 }

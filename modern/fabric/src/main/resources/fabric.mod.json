@@ -12,7 +12,8 @@
   "icon": "assets/windowstitlebardelete/icon.png",
   "environment": "client",
   "entrypoints": {
-    "client": ["wvv.windowstitlebardelete.fabric.TitlebarFabric"]
+    "client": ["wvv.windowstitlebardelete.fabric.TitlebarFabric"],
+    "modmenu": ["wvv.windowstitlebardelete.fabric.ModMenuIntegration"]
   },
   "mixins": ["windowstitlebardelete.mixins.json"],
   "depends": {

@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import wvv.windowstitlebardelete.modern.ModernHooks;
 
-/** Client tick without any loader event API. */
+/** The client tick on the game thread, without any loader event API. */
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin {
     @Inject(method = "tick", at = @At("HEAD"))
