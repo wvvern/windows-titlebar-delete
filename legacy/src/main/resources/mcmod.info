@@ -6,7 +6,7 @@
     "version": "${version}",
     "mcversion": "${mcversion}",
     "logoFile": "assets/windowstitlebardelete/icon.png",
-    "url": "",
+    "url": "https://modrinth.com/mod/windows-titlebar-delete",
     "authorList": [],
     "credits": ""
   }

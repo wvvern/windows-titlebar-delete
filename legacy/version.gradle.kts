@@ -21,7 +21,33 @@ java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(8))
 }
 
+// Writes BuildInfo.java so that the @Mod version comes from modVersion only.
+val generateBuildInfo = tasks.register("generateBuildInfo") {
+    val outputDir = layout.buildDirectory.dir("generated/buildinfo")
+    val version = modVersion
+    inputs.property("modVersion", version)
+    outputs.dir(outputDir)
+    doLast {
+        val file = outputDir.get().file("wvv/windowstitlebardelete/legacy/BuildInfo.java").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            |package wvv.windowstitlebardelete.legacy;
+            |
+            |/** Values that the build writes into the code. */
+            |final class BuildInfo {
+            |    static final String VERSION = "$version";
+            |
+            |    private BuildInfo() {
+            |    }
+            |}
+            |""".trimMargin()
+        )
+    }
+}
+
 sourceSets.main {
+    java.srcDir(generateBuildInfo)
     java.srcDir(rootProject.file("src/main/java"))
     java.srcDir(rootProject.file("src/v${mcVersion.replace('.', '_')}/java"))
     java.srcDir(rootProject.file("../core/src/main/java"))

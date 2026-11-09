@@ -6,7 +6,8 @@
   "description": "Hides the Windows title bar of the game window.",
   "authors": ["wvvern"],
   "contact": {
-    "sources": "https://github.com/wvvern/WindowTitleDelete"
+    "sources": "https://github.com/wvvern/windows-titlebar-delete",
+    "issues": "https://github.com/wvvern/windows-titlebar-delete/issues"
   },
   "license": "Apache-2.0",
   "icon": "assets/windowstitlebardelete/icon.png",

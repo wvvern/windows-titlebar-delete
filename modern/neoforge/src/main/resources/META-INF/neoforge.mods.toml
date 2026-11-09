@@ -1,11 +1,13 @@
 modLoader = "javafml"
 loaderVersion = "[1,)"
 license = "Apache-2.0"
+issueTrackerURL = "https://github.com/wvvern/windows-titlebar-delete/issues"
 
 [[mods]]
 modId = "${mod_id}"
 version = "${version}"
 displayName = "${mod_name}"
+displayURL = "https://modrinth.com/mod/windows-titlebar-delete"
 authors = "wvvern"
 logoFile = "assets/windowstitlebardelete/icon.png"
 description = '''

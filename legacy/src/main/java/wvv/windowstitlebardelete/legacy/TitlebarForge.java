@@ -11,11 +11,9 @@ import org.lwjgl.input.Keyboard;
 import wvv.windowstitlebardelete.core.Titlebar;
 
 /** Forge entry point shared by every legacy Minecraft version. */
-@Mod(modid = Titlebar.MOD_ID, name = Titlebar.MOD_NAME, version = TitlebarForge.VERSION, clientSideOnly = true,
+@Mod(modid = Titlebar.MOD_ID, name = Titlebar.MOD_NAME, version = BuildInfo.VERSION, clientSideOnly = true,
         acceptedMinecraftVersions = McCompat.ACCEPTED_MINECRAFT_VERSIONS, guiFactory = "wvv.windowstitlebardelete.legacy.GuiFactory")
 public class TitlebarForge {
-    public static final String VERSION = "2.0.0";
-
     /** The toggle key, which the settings screen names. */
     static KeyBinding key;
 

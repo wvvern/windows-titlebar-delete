@@ -6,7 +6,7 @@ A release is a tag such as `v2.0.0`. CI builds all jars, makes a GitHub release 
 
 1. Make sure that CI is green on `master`.
 2. Select the version (semantic versioning): a breaking config change increases the major number, a `feat` increases the minor number, only `fix` and `perf` increase the patch number.
-3. Set the version in three places: `mod_version` in `modern/gradle.properties`, `modVersion` in `legacy/gradle.properties`, and `VERSION` in `legacy/src/main/java/wvv/windowstitlebardelete/legacy/TitlebarForge.java`. CI builds the jars with the version of the tag, but it cannot change `VERSION`.
+3. Set the version in two places: `mod_version` in `modern/gradle.properties` and `modVersion` in `legacy/gradle.properties`. CI builds the jars with the version of the tag.
 4. Write the `CHANGELOG.md` section for the version (rules below). Put it at the top, under the title.
 5. Commit as `chore: Release X.Y.Z`, push, and push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
 6. Monitor the CI run. Check that the release has 39 jars and the notes, and that Modrinth has 39 new versions.
