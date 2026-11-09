@@ -1,0 +1,10 @@
+apply from: rootProject.file('gradle/shared.gradle')
+
+architectury {
+    common project.platforms
+}
+
+dependencies {
+    // Only for the Mixin classes that Fabric Loader brings along; no Fabric Loader classes are used in common.
+    add(project.modImplementation, "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version")
+}

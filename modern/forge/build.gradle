@@ -1,0 +1,29 @@
+apply from: rootProject.file('gradle/shared.gradle')
+
+architectury {
+    platformSetupLoomIde()
+    forge()
+}
+
+loom {
+    forge {
+        mixinConfig "${rootProject.mod_id}.mixins.json"
+    }
+}
+
+dependencies {
+    forge "net.minecraftforge:forge:$project.minecraft_version-$project.forge_version"
+}
+
+processResources {
+    def props = [
+            mod_id         : rootProject.mod_id,
+            mod_name       : rootProject.mod_name,
+            version        : project.version,
+            minecraft_range: project.minecraft_range_forge,
+            forge_range    : project.forge_range,
+            pack_format    : project.pack_format,
+    ]
+    inputs.properties props
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) { expand props }
+}

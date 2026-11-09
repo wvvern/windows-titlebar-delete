@@ -1,0 +1,35 @@
+apply from: rootProject.file('gradle/shared.gradle')
+
+architectury {
+    platformSetupLoomIde()
+    neoForge()
+}
+
+repositories {
+    maven { name = 'NeoForged'; url = 'https://maven.neoforged.net/releases' }
+}
+
+dependencies {
+    neoForge "net.neoforged:neoforge:$project.neoforge_version"
+}
+
+// NeoForge 1.20.4 reads META-INF/mods.toml and pack.mcmeta; 1.20.5 and later read META-INF/neoforge.mods.toml only.
+def newToml = stonecutter.eval(stonecutter.current.version, '>=1.20.5')
+
+processResources {
+    def props = [
+            mod_id         : rootProject.mod_id,
+            mod_name       : rootProject.mod_name,
+            version        : project.version,
+            minecraft_range: project.minecraft_range_neoforge,
+            neoforge_range : project.neoforge_range,
+            pack_format    : project.findProperty('pack_format') ?: '',
+    ]
+    inputs.properties props
+    if (newToml) {
+        exclude 'META-INF/mods.toml', 'pack.mcmeta'
+    } else {
+        exclude 'META-INF/neoforge.mods.toml'
+    }
+    filesMatching(['META-INF/*.toml', 'pack.mcmeta']) { expand props }
+}
