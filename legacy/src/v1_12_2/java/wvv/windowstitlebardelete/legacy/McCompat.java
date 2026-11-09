@@ -7,14 +7,7 @@ import net.minecraft.client.gui.FontRenderer;
 final class McCompat {
     static final String ACCEPTED_MINECRAFT_VERSIONS = "[1.12.2]";
 
-    private McCompat() {
-    }
+    private McCompat() {}
 
-    static boolean isFullscreen() {
-        return Minecraft.getMinecraft().isFullScreen();
-    }
-
-    static FontRenderer fontRenderer() {
-        return Minecraft.getMinecraft().fontRenderer;
-    }
+    static FontRenderer fontRenderer() { return Minecraft.getMinecraft().fontRenderer; }
 }

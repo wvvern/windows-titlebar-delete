@@ -72,7 +72,8 @@ tasks.named<net.fabricmc.loom.task.RemapJarTask>("remapJar") {
 tasks.register<JavaExec>("runClientDev") {
     group = "minecraft"
     description = "Starts the $mcVersion Forge dev client."
-    dependsOn("classes")
+    // downloadAssets also extracts the LWJGL natives, which Loom does in no other task that this run uses.
+    dependsOn("classes", "downloadAssets")
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("net.fabricmc.devlaunchinjector.Main")
     workingDir = file("run")
