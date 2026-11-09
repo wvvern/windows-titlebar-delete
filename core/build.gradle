@@ -1,0 +1,36 @@
+// Version-agnostic core: plain Java 8, zero Minecraft or loader dependencies.
+// Platform builds compile these sources directly; this project exists to run the unit tests.
+plugins {
+    id 'java-library'
+    id 'checkstyle'
+}
+
+repositories { mavenCentral() }
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 8   // must stay compilable for Minecraft 1.8.9
+    options.compilerArgs += ['-Xlint:-options']
+}
+
+dependencies {
+    // Each game version ships its own JNA (3.4.0 on 1.8.9), so core.win32 uses only API that all of them have.
+    compileOnly 'net.java.dev.jna:jna:4.4.0'
+    testImplementation 'net.java.dev.jna:jna:4.4.0'
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test { useJUnitPlatform() }
+
+// Lint rules: docs/CODING_STANDARDS.md. `./gradlew :core:check` runs them with the tests.
+checkstyle {
+    toolVersion = '10.21.4'
+    configDirectory = layout.projectDirectory.dir('config/checkstyle')
+    maxWarnings = 0
+}
