@@ -1,0 +1,230 @@
+name: CI
+
+# Builds all jars and runs the checks on every push and pull request, and makes a release for a tag such as v2.0.0 (docs/RELEASING.md).
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+permissions:
+  contents: read
+
+env:
+  # The tag on release builds and empty otherwise, so that a release gets the tag version, not the one in gradle.properties.
+  TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    outputs:
+      notes: ${{ steps.notes.outputs.notes }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          # The core tool chain is 21, and Gradle runs on the last version of the list.
+          java-version: |
+            21
+            25
+      - uses: gradle/actions/setup-gradle@v5
+      - run: bash tools/lint.sh
+      - run: ./gradlew --configure-on-demand -Porg.gradle.java.installations.fromEnv=JAVA_HOME_21_X64,JAVA_HOME_25_X64 :core:check
+        working-directory: modern
+      - name: Release notes
+        # A tag without its CHANGELOG.md section fails here, so no release is made.
+        if: env.TAG != ''
+        id: notes
+        run: |
+          notes="$(bash tools/release-notes.sh "$TAG")"
+          printf 'notes<<EOF\n%s\nEOF\n' "$notes" >> "$GITHUB_OUTPUT"
+
+  modern:
+    name: Build ${{ matrix.target.mc }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # To add a Minecraft version, add its folders in modern/, its entry in modern/settings.gradle, and a line here.
+        # node: the folder in modern/versions.
+        # mc: minecraft_version of the node, which is the end of the jar name.
+        # java: java_version of the node.
+        # loaders: the branches in modern/settings.gradle that have the node.
+        # fabric_loaders: the Modrinth loaders of the Fabric jar. To remove Quilt, set each value to fabric.
+        # game_versions: the released versions in minecraft_range_* of the node. mc-publish reads one value per line.
+        target: &modern
+          - { node: '1.16.5', mc: '1.16.5', java: 8, loaders: [fabric, forge], fabric_loaders: fabric, game_versions: '1.16.5' }
+          - { node: '1.17.1', mc: '1.17.1', java: 16, loaders: [fabric, forge], fabric_loaders: fabric, game_versions: '1.17.1' }
+          - { node: '1.18.2', mc: '1.18.2', java: 17, loaders: [fabric, forge], fabric_loaders: "fabric\nquilt", game_versions: '1.18.2' }
+          - { node: '1.19.2', mc: '1.19.2', java: 17, loaders: [fabric, forge], fabric_loaders: "fabric\nquilt", game_versions: "1.19\n1.19.1\n1.19.2" }
+          - { node: '1.19.4', mc: '1.19.4', java: 17, loaders: [fabric, forge], fabric_loaders: "fabric\nquilt", game_versions: '1.19.4' }
+          - { node: '1.20.1', mc: '1.20.1', java: 17, loaders: [fabric, forge], fabric_loaders: "fabric\nquilt", game_versions: "1.20\n1.20.1" }
+          - { node: '1.20.4', mc: '1.20.4', java: 17, loaders: [fabric, forge, neoforge], fabric_loaders: "fabric\nquilt", game_versions: "1.20.3\n1.20.4" }
+          - { node: '1.20.6', mc: '1.20.6', java: 21, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: "1.20.5\n1.20.6" }
+          - { node: '1.21.1', mc: '1.21.1', java: 21, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: "1.21\n1.21.1" }
+          - { node: '1.21.3', mc: '1.21.3', java: 21, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: "1.21.2\n1.21.3" }
+          - { node: '1.21.4', mc: '1.21.4', java: 21, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: '1.21.4' }
+          - { node: '1.21.5', mc: '1.21.5', java: 21, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: '1.21.5' }
+          - { node: '1.21.8', mc: '1.21.8', java: 21, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: "1.21.6\n1.21.7\n1.21.8" }
+          - { node: '1.21.10', mc: '1.21.10', java: 21, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: "1.21.9\n1.21.10" }
+          - { node: '1.21.11', mc: '1.21.11', java: 21, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: '1.21.11' }
+          - { node: '26.1', mc: '26.1.2', java: 25, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: "26.1\n26.1.1\n26.1.2" }
+          - { node: '26.2', mc: '26.2', java: 25, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: '26.2' }
+          - { node: '26.3', mc: '26.3', java: 25, loaders: [fabric, neoforge], fabric_loaders: "fabric\nquilt", game_versions: '26.3' }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          # The tool chain of the node, then 25, which runs Gradle.
+          java-version: |
+            ${{ matrix.target.java }}
+            25
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Build
+        working-directory: modern
+        env:
+          NODE: ${{ matrix.target.node }}
+          MC: ${{ matrix.target.mc }}
+          JAVA: ${{ matrix.target.java }}
+          LOADERS: ${{ join(matrix.target.loaders, ' ') }}
+        # Configure on demand so that Gradle sets up only the projects of this node.
+        run: |
+          tasks=""
+          for loader in $LOADERS; do tasks="$tasks :$loader:$NODE:releaseJar"; done
+          ./gradlew --configure-on-demand -Porg.gradle.java.installations.fromEnv=JAVA_HOME_${JAVA}_X64,JAVA_HOME_25_X64 \
+            ${TAG:+-Pmod_version=${TAG#v}} $tasks
+          mkdir -p ../dist
+          for loader in $LOADERS; do
+            cp "$loader/versions/$NODE/build/libs/windowstitlebardelete-$loader-"*"+$MC.jar" ../dist/
+          done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: jars-${{ matrix.target.mc }}
+          path: dist/*.jar
+          if-no-files-found: error
+
+  legacy:
+    name: Build 1.8.9 and 1.12.2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          # The game tool chain is 8, and Gradle 8.8 runs on 21.
+          java-version: |
+            8
+            21
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Build
+        working-directory: legacy
+        run: ./gradlew -Porg.gradle.java.installations.fromEnv=JAVA_HOME_8_X64,JAVA_HOME_21_X64 ${TAG:+-PmodVersion=${TAG#v}} build
+      # One artifact for each Minecraft version, as the modern job makes.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: jars-1.8.9
+          path: legacy/versions/1.8.9/build/libs/windowstitlebardelete-forge-*.jar
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        with:
+          name: jars-1.12.2
+          path: legacy/versions/1.12.2/build/libs/windowstitlebardelete-forge-*.jar
+          if-no-files-found: error
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [check, modern, legacy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/*.jar
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ needs.check.outputs.notes }}
+        run: |
+          jar="$(cd dist && ls windowstitlebardelete-fabric-*.jar | tail -1)"
+          cat > notes.md <<EOF
+          $NOTES
+
+          To make sure that a jar comes from this repository, run this command in its folder. Use the name of your jar.
+
+          ~~~
+          gh attestation verify $jar -R $GITHUB_REPOSITORY
+          ~~~
+          EOF
+          gh release create "$TAG" dist/*.jar --repo "$GITHUB_REPOSITORY" --title "Windows Titlebar Delete ${TAG#v}" --notes-file notes.md
+
+  modrinth:
+    name: Modrinth ${{ matrix.target.mc }}
+    # Needs the repository variable MODRINTH_PROJECT_ID and the secret MODRINTH_TOKEN.
+    if: vars.MODRINTH_PROJECT_ID != ''
+    needs: [check, release]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: *modern
+        include:
+          - { target: { mc: '1.8.9', loaders: [forge], game_versions: '1.8.9' } }
+          - { target: { mc: '1.12.2', loaders: [forge], game_versions: '1.12.2' } }
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: jars-${{ matrix.target.mc }}
+          path: dist
+      # One step for each loader. A step also runs when the step of a different loader failed.
+      - name: Fabric
+        if: ${{ !cancelled() && contains(matrix.target.loaders, 'fabric') }}
+        uses: Kir-Antipov/mc-publish@v3
+        with:
+          modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: dist/windowstitlebardelete-fabric-*.jar
+          name: Windows Titlebar Delete ${{ env.TAG }} for fabric ${{ matrix.target.mc }}
+          version: ${{ env.TAG }}+fabric-${{ matrix.target.mc }}
+          loaders: ${{ matrix.target.fabric_loaders }}
+          game-versions: ${{ matrix.target.game_versions }}
+          changelog: ${{ needs.check.outputs.notes }}
+      - name: Forge
+        if: ${{ !cancelled() && contains(matrix.target.loaders, 'forge') }}
+        uses: Kir-Antipov/mc-publish@v3
+        with:
+          modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: dist/windowstitlebardelete-forge-*.jar
+          name: Windows Titlebar Delete ${{ env.TAG }} for forge ${{ matrix.target.mc }}
+          version: ${{ env.TAG }}+forge-${{ matrix.target.mc }}
+          loaders: forge
+          game-versions: ${{ matrix.target.game_versions }}
+          changelog: ${{ needs.check.outputs.notes }}
+      - name: NeoForge
+        if: ${{ !cancelled() && contains(matrix.target.loaders, 'neoforge') }}
+        uses: Kir-Antipov/mc-publish@v3
+        with:
+          modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: dist/windowstitlebardelete-neoforge-*.jar
+          name: Windows Titlebar Delete ${{ env.TAG }} for neoforge ${{ matrix.target.mc }}
+          version: ${{ env.TAG }}+neoforge-${{ matrix.target.mc }}
+          loaders: neoforge
+          game-versions: ${{ matrix.target.game_versions }}
+          changelog: ${{ needs.check.outputs.notes }}
