@@ -30,6 +30,15 @@ class StylesTest {
     }
 
     @Test
+    void popupWindowKeepsItsStyle() {
+        int popup = Styles.WS_POPUP | OTHER;
+        for (int combo = 0; combo < 4; combo++) {
+            assertEquals(popup, Styles.wanted(popup, (combo & 1) != 0, (combo & 2) != 0));
+            assertEquals(popup | ALL, Styles.wanted(popup | ALL, (combo & 1) != 0, (combo & 2) != 0));
+        }
+    }
+
+    @Test
     void isIdempotentAndKeepsOtherBits() {
         int[] styles = {0, OTHER, OTHER | ALL, OTHER | WS_CAPTION, ~0, ~ALL, FakeWindow.NORMAL};
         for (int style : styles) {
