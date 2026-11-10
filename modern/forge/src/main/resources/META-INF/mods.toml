@@ -1,0 +1,31 @@
+modLoader = "javafml"
+loaderVersion = "${forge_range}"
+license = "Apache-2.0"
+issueTrackerURL = "https://github.com/wvvern/windows-titlebar-delete/issues"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${version}"
+displayName = "${mod_name}"
+displayURL = "https://modrinth.com/mod/windows-titlebar-delete"
+authors = "wvvern"
+logoFile = "assets/windowstitlebardelete/icon.png"
+# Forge 1.19 and later read this key, and it keeps a server that does not have the mod compatible in the server list.
+displayTest = "IGNORE_ALL_VERSION"
+description = '''
+Hides the Windows titlebar of the game window.
+'''
+
+[[dependencies.${mod_id}]]
+modId = "forge"
+mandatory = true
+versionRange = "${forge_range}"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${minecraft_range}"
+ordering = "NONE"
+side = "CLIENT"

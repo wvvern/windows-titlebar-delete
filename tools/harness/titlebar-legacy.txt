@@ -1,0 +1,15 @@
+# This file is titlebar.txt for Forge 1.8.9 and 1.12.2 with no fullscreen step, because LWJGL 2 fullscreen can change the display mode of the real monitor also from a hidden desktop.
+# config-end "hidden": true
+wait 100
+# expect caption off thickframe on
+style
+wait 40
+toggle
+# expect caption on thickframe on
+style
+wait 40
+toggle
+# expect caption off thickframe on
+style
+wait 40
+quit

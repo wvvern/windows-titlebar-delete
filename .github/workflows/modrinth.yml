@@ -1,0 +1,65 @@
+# Uploads one jar from an existing GitHub release to Modrinth when a Modrinth step of the release failed (docs/RELEASING.md).
+name: Modrinth upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example v2.0.0
+        required: true
+      loader:
+        description: Loader in the jar name (fabric, forge or neoforge)
+        required: true
+      mc:
+        description: Minecraft version in the jar name, for example 1.21.8 or 26.1.2
+        required: true
+      game_versions:
+        description: Game versions, separated by spaces
+        required: true
+      loaders:
+        description: Modrinth loaders, separated by spaces. Empty means the loader in the jar name.
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  modrinth:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      LOADER: ${{ inputs.loader }}
+      MC: ${{ inputs.mc }}
+      GAME_VERSIONS: ${{ inputs.game_versions }}
+      LOADERS: ${{ inputs.loaders || inputs.loader }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Download the jar from the release
+        run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "windowstitlebardelete-$LOADER-*+$MC.jar" --dir dist
+      - name: Read the game versions, the loaders and the changelog
+        id: meta
+        run: |
+          {
+            echo "versions<<EOF"
+            echo "$GAME_VERSIONS" | tr ' ' '\n'
+            echo "EOF"
+            echo "loaders<<EOF"
+            echo "$LOADERS" | tr ' ' '\n'
+            echo "EOF"
+            echo "notes<<EOF"
+            bash tools/release-notes.sh "${TAG#v}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - uses: Kir-Antipov/mc-publish@v3
+        with:
+          modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: dist/*.jar
+          name: Windows Titlebar Delete ${{ inputs.tag }} for ${{ inputs.loader }} ${{ inputs.mc }}
+          version: ${{ inputs.tag }}+${{ inputs.loader }}-${{ inputs.mc }}
+          loaders: ${{ steps.meta.outputs.loaders }}
+          game-versions: ${{ steps.meta.outputs.versions }}
+          changelog: ${{ steps.meta.outputs.notes }}

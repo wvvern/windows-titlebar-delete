@@ -1,0 +1,33 @@
+package wvv.windowstitlebardelete.legacy;
+
+import net.minecraft.client.settings.KeyBinding;
+import net.minecraftforge.fml.client.registry.ClientRegistry;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
+import org.lwjgl.input.Keyboard;
+import wvv.windowstitlebardelete.core.Titlebar;
+
+@Mod(modid = Titlebar.MOD_ID, name = Titlebar.MOD_NAME, version = BuildInfo.VERSION, clientSideOnly = true,
+        acceptedMinecraftVersions = BuildInfo.MINECRAFT_RANGE)
+public class TitlebarForge {
+    private KeyBinding key;
+
+    @Mod.EventHandler
+    public void init(FMLInitializationEvent event) {
+        Titlebar.init(new LegacyPlatform());
+        key = new KeyBinding(Titlebar.KEY_NAME, Keyboard.KEY_F12, "key.categories.misc");
+        ClientRegistry.registerKeyBinding(key);
+        // The FML bus gets the tick events on 1.8.9 and is the Forge bus on 1.12.2.
+        FMLCommonHandler.instance().bus().register(this);
+    }
+
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        while (key.isPressed()) Titlebar.toggle();
+        Titlebar.tick();
+    }
+}

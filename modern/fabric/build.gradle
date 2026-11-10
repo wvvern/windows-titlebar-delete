@@ -1,0 +1,23 @@
+apply from: rootProject.file('gradle/shared.gradle')
+
+architectury {
+    platformSetupLoomIde()
+    fabric()
+}
+
+dependencies {
+    add(project.modImplementation, "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version")
+}
+
+processResources {
+    def props = [
+            mod_id           : rootProject.mod_id,
+            mod_name         : rootProject.mod_name,
+            version          : project.version,
+            minecraft_range  : project.minecraft_range_fabric,
+            java_version     : project.java_version,
+            fabric_loader_min: rootProject.fabric_loader_min,
+    ]
+    inputs.properties props
+    filesMatching('fabric.mod.json') { expand props }
+}

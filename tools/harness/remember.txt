@@ -1,0 +1,13 @@
+# The description of tools/harness.ps1 gives the rules for this file.
+# 0x16CF0000 is the style of a game window that no program changed.
+# config-start {"hidden": false, "keepResizeBorder": false}
+# config-end "hidden": true
+wait 100
+# expect style 0x16CF0000
+style
+wait 40
+toggle
+# expect caption off thickframe off
+style
+wait 40
+quit

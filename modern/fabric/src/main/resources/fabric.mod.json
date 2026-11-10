@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "Hides the Windows titlebar of the game window.",
+  "authors": ["wvvern"],
+  "contact": {
+    "sources": "https://github.com/wvvern/windows-titlebar-delete",
+    "issues": "https://github.com/wvvern/windows-titlebar-delete/issues"
+  },
+  "license": "Apache-2.0",
+  "icon": "assets/windowstitlebardelete/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["wvv.windowstitlebardelete.fabric.TitlebarFabric"]
+  },
+  "mixins": ["windowstitlebardelete.mixins.json"],
+  "depends": {
+    "fabricloader": ">=${fabric_loader_min}",
+    "minecraft": "${minecraft_range}",
+    "java": ">=${java_version}"
+  }
+}

@@ -1,0 +1,25 @@
+# The description of tools/harness.ps1 gives the rules for this file.
+# config-end "hidden": true
+wait 100
+# expect caption off thickframe on
+style
+wait 40
+toggle
+# expect caption on thickframe on
+style
+wait 40
+toggle
+# expect caption off thickframe on
+style
+wait 40
+fullscreen on
+wait 100
+# expect popup on
+style
+wait 40
+fullscreen off
+wait 100
+# expect caption off thickframe on
+style
+wait 40
+quit

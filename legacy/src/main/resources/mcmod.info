@@ -1,0 +1,12 @@
+[
+  {
+    "modid": "${modid}",
+    "name": "Windows Titlebar Delete",
+    "description": "Hides the Windows titlebar of the game window.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "logoFile": "assets/windowstitlebardelete/icon.png",
+    "url": "https://modrinth.com/mod/windows-titlebar-delete",
+    "authorList": ["wvvern"]
+  }
+]

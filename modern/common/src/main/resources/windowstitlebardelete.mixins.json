@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "wvv.windowstitlebardelete.modern.mixin",
+  "compatibilityLevel": "JAVA_${java_version}",
+  "client": [
+    "MinecraftMixin",
+    "OptionsMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
