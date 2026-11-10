@@ -13,7 +13,7 @@ logoFile = "assets/windowstitlebardelete/icon.png"
 # This key keeps a server that does not have the mod compatible in the server list.
 displayTest = "IGNORE_ALL_VERSION"
 description = '''
-Hides the Windows title bar of the game window.
+Hides the Windows titlebar of the game window.
 '''
 
 [[mixins]]

@@ -24,26 +24,19 @@ public final class Harness {
         void quit();
     }
 
-    /** The ticks that the harness waits for the game window before it runs the commands anyway. */
-    static final int WINDOW_TICKS = 1200;
-    /** The age in milliseconds that a command file must have, so that the harness does not take a file that is still being written. */
-    private static final long SETTLE_MS = 500;
-
-    private static volatile File logFile;
-
-    private final File dir;
+    private final File logFile;
     private final Host host;
     private final Deque<String> queue = new ArrayDeque<String>();
     private int waitTicks;
-    /** The ticks that passed before the game window was found, or -1 after it was found or after the limit. */
-    private int windowTicks;
-    /** A {@code style} command ran, so the next tick logs the style that the window has after this tick. */
-    private boolean styleDue;
 
     Harness(File dir, Host host) {
-        this.dir = dir;
+        this.logFile = new File(dir, "log.txt");
         this.host = host;
-        logFile = new File(dir, "log.txt");
+        try {
+            queue.addAll(Files.readAllLines(new File(dir, "commands.txt").toPath(), StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            log("! cannot read commands: " + e);
+        }
     }
 
     /** @return the harness, or null when the system property is not set */
@@ -51,28 +44,17 @@ public final class Harness {
         String path = System.getProperty("wtd.harness");
         if (path == null || path.trim().isEmpty()) return null;
         File dir = new File(path).getAbsoluteFile();
-        dir.mkdirs();
         platform.info("Test harness enabled in " + dir);
         return new Harness(dir, platform.harnessHost());
     }
 
-    /** Runs the commands that are due, before {@link Titlebar#tick} examines the window. */
+    /** Runs the commands up to the next {@code wait}, or counts one tick of the current {@code wait}. */
     public void tick() {
-        takeCommandFile();
-        if (windowTicks >= 0) {
-            if (Titlebar.windowStyle() == null && ++windowTicks < WINDOW_TICKS) return;
-            if (windowTicks >= WINDOW_TICKS) log("! no game window after " + WINDOW_TICKS + " ticks");
-            windowTicks = -1;
-        }
-        if (styleDue) {
-            styleDue = false;
-            logStyle();
-        }
         if (waitTicks > 0) {
             waitTicks--;
             return;
         }
-        while (!queue.isEmpty() && waitTicks == 0 && !styleDue) {
+        while (!queue.isEmpty() && waitTicks == 0) {
             String line = queue.poll().trim();
             if (line.isEmpty() || line.startsWith("#")) continue;
             log("> " + line);
@@ -87,48 +69,27 @@ public final class Harness {
     private void execute(String line) {
         String[] words = line.split("\\s+", 2);
         String verb = words[0];
-        String arg = words.length > 1 ? words[1].trim() : "";
+        String arg = words.length > 1 ? words[1] : "";
         if (verb.equals("wait")) waitTicks = Integer.parseInt(arg);
         else if (verb.equals("toggle")) Titlebar.toggle();
-        else if (verb.equals("style")) styleDue = true;
-        else if (verb.equals("fullscreen")) host.setFullscreen(onOff(arg));
+        else if (verb.equals("style")) logStyle();
+        else if (verb.equals("fullscreen") && (arg.equals("on") || arg.equals("off"))) host.setFullscreen(arg.equals("on"));
         else if (verb.equals("quit")) host.quit();
-        else log("! unknown command: " + verb);
+        else log("! unknown command: " + line);
     }
 
-    static boolean onOff(String word) {
-        if (word.equals("on")) return true;
-        if (word.equals("off")) return false;
-        throw new IllegalArgumentException("expected on or off: " + word);
-    }
-
-    private static void logStyle() {
+    private void logStyle() {
         Integer style = Titlebar.windowStyle();
         if (style == null) log("! style: no game window");
         else log(String.format(Locale.ROOT, "style 0x%08X hidden=%b", style, Titlebar.hidden()));
     }
 
-    private void takeCommandFile() {
-        File commands = new File(dir, "commands.txt");
-        if (!commands.isFile() || System.currentTimeMillis() - commands.lastModified() < SETTLE_MS) return;
-        File taken = new File(dir, "commands.taken");
-        taken.delete();
-        if (!commands.renameTo(taken)) return; // the writer can still hold it, so the next tick tries again
+    private void log(String message) {
         try {
-            queue.addAll(Files.readAllLines(taken.toPath(), StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            log("! cannot read commands: " + e);
-        }
-    }
-
-    /** Appends a line to the harness log, from any thread, and never throws. */
-    public static synchronized void log(String message) {
-        if (logFile == null) return;
-        try {
-            byte[] line = (message + System.getProperty("line.separator")).getBytes(StandardCharsets.UTF_8);
+            byte[] line = (message + System.lineSeparator()).getBytes(StandardCharsets.UTF_8);
             Files.write(logFile.toPath(), line, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException ignored) {
-            // Logging must never break the game.
+            // A log failure must not stop the game.
         }
     }
 }

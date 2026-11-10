@@ -21,25 +21,4 @@ public final class Config {
     public Config withHidden(boolean value) {
         return new Config(value, keepResizeBorder);
     }
-
-    public Config withKeepResizeBorder(boolean value) {
-        return new Config(hidden, value);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Config)) return false;
-        Config c = (Config) o;
-        return hidden == c.hidden && keepResizeBorder == c.keepResizeBorder;
-    }
-
-    @Override
-    public int hashCode() {
-        return (hidden ? 2 : 0) + (keepResizeBorder ? 1 : 0);
-    }
-
-    @Override
-    public String toString() {
-        return "hidden=" + hidden + ", keepResizeBorder=" + keepResizeBorder;
-    }
 }

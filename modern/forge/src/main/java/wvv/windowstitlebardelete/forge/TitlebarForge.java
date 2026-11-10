@@ -18,10 +18,11 @@ import static net.minecraftforge.network.NetworkConstants.IGNORESERVERONLY;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
+import wvv.windowstitlebardelete.core.Titlebar;
 import wvv.windowstitlebardelete.modern.ModernHooks;
 
 /** Starts the mod on Forge; a dedicated server loads it and does nothing. */
-@Mod("windowstitlebardelete")
+@Mod(Titlebar.MOD_ID)
 public final class TitlebarForge {
     public TitlebarForge() {
         if (FMLEnvironment.dist != Dist.CLIENT) return;

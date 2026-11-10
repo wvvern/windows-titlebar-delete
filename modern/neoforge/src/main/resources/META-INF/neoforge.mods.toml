@@ -11,7 +11,7 @@ displayURL = "https://modrinth.com/mod/windows-titlebar-delete"
 authors = "wvvern"
 logoFile = "assets/windowstitlebardelete/icon.png"
 description = '''
-Hides the Windows title bar of the game window.
+Hides the Windows titlebar of the game window.
 '''
 
 [[mixins]]

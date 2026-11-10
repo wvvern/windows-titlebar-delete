@@ -23,7 +23,6 @@ plugins {
 
 rootProject.name = 'windowstitlebardelete-modern'
 
-// The Minecraft-free core is a project here only so its own checks run; platform jars compile its sources directly.
 if (file('../core/build.gradle').exists()) {
     include 'core'
     project(':core').projectDir = file('../core')

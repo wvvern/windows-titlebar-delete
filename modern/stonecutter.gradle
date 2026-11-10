@@ -16,7 +16,6 @@ stonecutter.parameters {
     swaps.put('minecraft', "\"${node.minecraft_version}\";")
 }
 
-// One folder with the release jar of every loader and Minecraft version: build/libs/.
 tasks.register('collectJars', Copy) {
     group = 'build'
     description = 'Builds every loader x Minecraft version release jar and copies them to build/libs.'

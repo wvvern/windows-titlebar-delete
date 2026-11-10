@@ -17,7 +17,7 @@ public final class Titlebar {
     public static final String MOD_NAME = "Windows Titlebar Delete";
     /** The name of the key binding, which is plain text because Fabric without Fabric API loads no language files. */
     public static final String KEY_NAME = "Toggle the titlebar";
-    public static final String CONFIG_FILE = "windowstitlebardelete.json";
+    static final String CONFIG_FILE = "windowstitlebardelete.json";
 
     private static Platform platform;
     private static File configFile;
@@ -55,12 +55,13 @@ public final class Titlebar {
         }
     }
 
-    /** Runs the harness commands, then hides the titlebar again if the game put it back; call it on the client thread. */
+    /** Hides the titlebar again if the game put it back, then runs the harness commands; call it on the client thread. */
     public static synchronized void tick() {
         if (platform == null) return;
-        if (harness != null) harness.tick();
         // The game gives no signal when it leaves fullscreen or makes a new window, so each tick reads the style while the titlebar is hidden.
         if (config.hidden()) writeStyle();
+        // The harness runs last, so that its style command logs the style that this tick gave the window.
+        if (harness != null) harness.tick();
     }
 
     /** Shows or hides the titlebar and saves that state for the next start; call it on the client thread. */

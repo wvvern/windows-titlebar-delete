@@ -44,6 +44,8 @@ A `Yes` in the Quilt column shows that Modrinth lists the Fabric jar for Quilt. 
 
 The key `Toggle the titlebar` shows or hides the titlebar. The default key is F12. You can change it in the Controls screen, in the category Miscellaneous.
 
+The key works only while no screen is open. It does nothing on the title screen, in a menu, in chat and in an inventory.
+
 The mod remembers the state of the titlebar. When you start the game again, the titlebar is hidden or shown as you left it. A new install starts with no titlebar.
 
 While the titlebar shows, the mod does not change the game window.
@@ -64,11 +66,12 @@ The config file is `config/windowstitlebardelete.json`. The mod writes the file 
 | `hidden` | `true` | `true` hides the titlebar. The mod writes this value each time you press the key. |
 | `keepResizeBorder` | `true` | With `true`, a window with no titlebar keeps its thin border, so you can change its size with the mouse and maximize it with Win+Up. With `false`, the window has no frame. Only the file can change this value. |
 
-The mod reads the file only when the game starts. Thus, close the game before you edit the file. If the file is not valid, the mod uses the default values and writes a warning to the log.
+The mod reads the file only when the game starts. Thus, close the game before you edit the file. A key that is not in the file keeps its default value. If a key has a value that is not `true` or `false`, the mod uses the default values of the two keys and writes a warning to the log.
 
 ## Known limits
 
 - The mod works only on Windows.
+- The key does nothing while a screen is open, because the game counts the presses of a key only while no screen is open.
 - The mod does not change the window while the game is in fullscreen. If you press the key in fullscreen, you see the result when you go back to the window.
 - If the titlebar is hidden and the window is not maximized, the window can become taller each time you go to fullscreen and back.
 - If a different mod makes the window borderless, that mod keeps control of the window. Windows Titlebar Delete does not change such a window.

@@ -6,31 +6,39 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ConfigCodecTest {
+    private static void assertDecodes(boolean hidden, boolean keepResizeBorder, String text) {
+        Config c = ConfigCodec.decode(text);
+        assertEquals(hidden, c.hidden());
+        assertEquals(keepResizeBorder, c.keepResizeBorder());
+    }
+
     @Test
     void roundTripsAllValues() {
         for (int combo = 0; combo < 4; combo++) {
-            Config c = new Config((combo & 1) != 0, (combo & 2) != 0);
-            assertEquals(c, ConfigCodec.decode(ConfigCodec.encode(c)));
+            boolean hidden = (combo & 1) != 0;
+            boolean keepResizeBorder = (combo & 2) != 0;
+            assertDecodes(hidden, keepResizeBorder, ConfigCodec.encode(new Config(hidden, keepResizeBorder)));
         }
     }
 
     @Test
     void writesTheDocumentedKeys() {
-        assertEquals("{\n  \"hidden\": true,\n  \"keepResizeBorder\": false\n}\n",
-                ConfigCodec.encode(Config.DEFAULTS.withKeepResizeBorder(false)));
+        assertEquals("{\n  \"hidden\": true,\n  \"keepResizeBorder\": false\n}\n", ConfigCodec.encode(new Config(true, false)));
     }
 
     @Test
-    void missingKeysKeepDefaultsAndUnknownKeysAreIgnored() {
-        assertEquals(Config.DEFAULTS, ConfigCodec.decode("{}"));
-        Config c = ConfigCodec.decode("{ // a comment\n \"keepResizeBorder\": false, \"other\": [1, {\"a\": null}], }");
-        assertEquals(new Config(true, false), c);
+    void missingKeysKeepDefaultsAndOtherTextIsIgnored() {
+        assertDecodes(true, true, "{}");
+        assertDecodes(true, true, "not JSON");
+        assertDecodes(true, false, "{ // a comment\n \"keepResizeBorder\" : false, \"other\": [1, {\"a\": null}], }");
+        assertDecodes(false, true, "{\"hidden\":false}");
     }
 
     @Test
-    void rejectsBrokenText() {
+    void rejectsAKeyWithAValueThatIsNotTrueOrFalse() {
         assertThrows(IllegalArgumentException.class, () -> ConfigCodec.decode("{\"hidden\": tru"));
-        assertThrows(IllegalArgumentException.class, () -> ConfigCodec.decode("[true]"));
         assertThrows(IllegalArgumentException.class, () -> ConfigCodec.decode("{\"hidden\": \"yes\"}"));
+        assertThrows(IllegalArgumentException.class, () -> ConfigCodec.decode("{\"hidden\": true, \"keepResizeBorder\": 1}"));
+        assertThrows(IllegalArgumentException.class, () -> ConfigCodec.decode("{\"hidden\" true}"));
     }
 }

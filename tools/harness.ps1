@@ -7,8 +7,10 @@ The game runs with the test harness (core/src/main/java/wvv/windowstitlebardelet
 commands file in tools/harness/. Sound and narrator are off. The game does not pause when it loses focus.
 For a Forge 1.8.9 or 1.12.2 target, the script uses <name>-legacy.txt in place of <name>.txt when that file exists.
 Each "style" line that the game writes to log.txt is a checkpoint. At once, the script reads the style of the game
-window with GetWindowLong from this process. The in-game style and the outside style must be equal, and the bits must
-agree with the "# expect" line before the "style" command.
+window with GetWindowLong from this process. The in-game style and the outside style must be equal, and the style must
+agree with the "# expect" line before the "style" command. That line has pairs of a bit name (caption, sysmenu,
+thickframe, minimizebox, maximizebox, popup) and "on" or "off", or it has "style" and the full style, such as 0x16CF0000.
+A "wait 40" after each "style" keeps the window stable while the script reads the style.
 The game starts with no config file, or with the config file of the "# config-start" line of the commands file. After
 the game stops, the config file must have the text of the "# config-end" line.
 The logs and result.txt go to <OutDir>\<target>\. The exit code is 1 when a target fails.
@@ -31,7 +33,7 @@ param(
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $legacyVersions = @("1.8.9", "1.12.2")
-$styleBits = @{ caption = 0x00C00000; sysmenu = 0x00080000; thickframe = 0x00040000; minimizebox = 0x00020000; maximizebox = 0x00010000 }
+$styleBits = @{ popup = 0x80000000; caption = 0x00C00000; sysmenu = 0x00080000; thickframe = 0x00040000; minimizebox = 0x00020000; maximizebox = 0x00010000 }
 
 Add-Type @"
 using System;
@@ -90,7 +92,7 @@ function Set-Options([string]$runDir) {
         foreach ($line in Get-Content $file) { $i = $line.IndexOf(':'); if ($i -gt 0) { $options[$line.Substring(0, $i)] = $line.Substring($i + 1) } }
     }
     $wanted = @{ onboardAccessibility = "false"; narrator = "0"; soundCategory_master = "0.0"; pauseOnLostFocus = "false";
-                 tutorialStep = "none"; skipMultiplayerWarning = "true"; joinedFirstServer = "true"; fullscreen = "false"; guiScale = "0";
+                 tutorialStep = "none"; skipMultiplayerWarning = "true"; joinedFirstServer = "true"; fullscreen = "false";
                  exclusiveFullscreen = "false" }
     foreach ($k in $wanted.Keys) { $options[$k] = $wanted[$k] }
     # With no fullscreen resolution, fullscreen uses the current mode of the monitor, so the real screen does not change its mode.
@@ -137,7 +139,7 @@ function Read-Directive([string]$file, [string]$name) {
     return $null
 }
 
-# The process ids of all descendants of a process.
+# All descendant processes of a process.
 function Get-Descendants([int]$parent) {
     $all = Get-CimInstance Win32_Process -Property ProcessId, ParentProcessId, Name, CommandLine
     $ids = [Collections.Generic.HashSet[int]]::new()
@@ -152,11 +154,15 @@ function Get-Descendants([int]$parent) {
     return $all | Where-Object { $ids.Contains([int]$_.ProcessId) }
 }
 
-# The java processes under the launcher whose command line has the harness folder, which include the game.
+# True for a java process whose command line has the harness folder.
+function Test-HarnessJava($process, [string]$harness) {
+    return $process.Name -match "^javaw?\.exe$" -and $process.CommandLine -and
+        $process.CommandLine.IndexOf($harness, [StringComparison]::OrdinalIgnoreCase) -ge 0
+}
+
+# The java processes of the harness under the launcher, which include the game.
 function Get-GamePids([int]$launcher, [string]$harness) {
-    return @(Get-Descendants $launcher | Where-Object {
-        $_.Name -match "^javaw?\.exe$" -and $_.CommandLine -and $_.CommandLine.IndexOf($harness, [StringComparison]::OrdinalIgnoreCase) -ge 0
-    } | ForEach-Object { [int]$_.ProcessId })
+    return @(Get-Descendants $launcher | Where-Object { Test-HarnessJava $_ $harness } | ForEach-Object { [int]$_.ProcessId })
 }
 
 # The style of the visible LWJGL, GLFW or SDL window of one of the processes, or $null when there is no such window.
@@ -183,7 +189,7 @@ function Stop-Run([int]$launcher, [string]$harness) {
         Get-Descendants $launcher | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
         Stop-Process -Id $launcher -Force -ErrorAction SilentlyContinue
     }
-    Get-CimInstance Win32_Process -Filter "Name='java.exe'" | Where-Object { $_.CommandLine -match [regex]::Escape($harness) } |
+    Get-CimInstance Win32_Process -Property ProcessId, Name, CommandLine | Where-Object { Test-HarnessJava $_ $harness } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 }
 
@@ -219,10 +225,7 @@ foreach ($target in $Targets) {
     $harness = Join-Path $env:TEMP "wtd-harness\$target"
     Remove-Item -Recurse -Force $harness -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $harness | Out-Null
-    $commandsCopy = Join-Path $harness "commands.txt"
-    Copy-Item $commandsFile $commandsCopy
-    # The harness takes the file only when it is older than half a second.
-    (Get-Item $commandsCopy).LastWriteTime = (Get-Date).AddSeconds(-5)
+    Copy-Item $commandsFile (Join-Path $harness "commands.txt")
 
     Write-Host "[$target] launching hidden with $(Split-Path -Leaf $commandsFile)"
     $gradleLog = Join-Path $harness "gradle.log"

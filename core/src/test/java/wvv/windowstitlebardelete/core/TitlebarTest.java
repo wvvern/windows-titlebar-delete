@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TitlebarTest {
     private static final int HIDDEN = Styles.hidden(FakeWindow.NORMAL, true);
-    private static final Config SHOWN = Config.DEFAULTS.withHidden(false);
+    private static final Config SHOWN = new Config(false, true);
 
     @TempDir
     File dir;
@@ -58,11 +58,20 @@ class TitlebarTest {
     }
 
     @Test
-    void brokenConfigWarnsOnceAndUsesDefaults() throws IOException {
+    void textWithNoKeyGivesDefaultsWithNoWarning() throws IOException {
         startWith("{ broken");
         assertTrue(Titlebar.hidden());
-        assertEquals(1, platform.warnings.size());
+        assertTrue(platform.warnings.isEmpty());
         assertEquals("{ broken", saved());
+    }
+
+    @Test
+    void keyWithABadValueWarnsOnceAndUsesDefaults() throws IOException {
+        String text = "{\"hidden\": false, \"keepResizeBorder\": no}";
+        startWith(text);
+        assertTrue(Titlebar.hidden());
+        assertEquals(1, platform.warnings.size());
+        assertEquals(text, saved());
     }
 
     @Test
@@ -111,11 +120,10 @@ class TitlebarTest {
 
     @Test
     void toggleKeepsTheResizeBorderValueOfTheFile() throws IOException {
-        Config noBorder = SHOWN.withKeepResizeBorder(false);
-        startWith(ConfigCodec.encode(noBorder));
+        startWith(ConfigCodec.encode(new Config(false, false)));
         Titlebar.toggle();
         assertEquals(Styles.hidden(FakeWindow.NORMAL, false), window.style);
-        assertEquals(ConfigCodec.encode(noBorder.withHidden(true)), saved());
+        assertEquals(ConfigCodec.encode(new Config(true, false)), saved());
     }
 
     @Test

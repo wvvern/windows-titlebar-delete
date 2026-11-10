@@ -10,7 +10,6 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.lwjgl.input.Keyboard;
 import wvv.windowstitlebardelete.core.Titlebar;
 
-/** Forge entry point shared by every legacy Minecraft version. */
 @Mod(modid = Titlebar.MOD_ID, name = Titlebar.MOD_NAME, version = BuildInfo.VERSION, clientSideOnly = true,
         acceptedMinecraftVersions = BuildInfo.MINECRAFT_RANGE)
 public class TitlebarForge {

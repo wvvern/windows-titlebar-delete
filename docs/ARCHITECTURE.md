@@ -32,7 +32,7 @@ One tool chain cannot build both 1.8.9 Forge and 26.x, so there are two builds. 
 - `Styles.hidden(style, keepBorder)` and `Styles.shown(style)` are pure functions. They give the style bits of a window without and with its titlebar. They change only `WS_CAPTION`, `WS_SYSMENU`, `WS_MINIMIZEBOX`, `WS_MAXIMIZEBOX` and `WS_THICKFRAME`. They always keep `WS_MAXIMIZEBOX`, so Win+Up maximizes a window that has the resize border.
 - Popup rule: a window with `WS_POPUP` keeps its style. The two functions give the same style back. Such a window is in fullscreen, or a different mod made it borderless.
 - `Titlebar` is the only entry point for the adapters: `init`, `tick` and `toggle`.
-- `config/` has the immutable `Config`, `ConfigCodec` and a small JSON reader. The file is `windowstitlebardelete.json` in the config folder that `Platform.configDir` gives. A missing key keeps its default. A file that is not valid gives one warning and the defaults.
+- `config/` has the immutable `Config` and `ConfigCodec`. The file is `windowstitlebardelete.json` in the config folder that `Platform.configDir` gives. `ConfigCodec.decode` finds each of the two keys in the text of the file with one pattern and does not examine the other text. A key that is not in the text keeps its default. A key with a value that is not `true` or `false` gives one warning and the defaults of the two keys.
 - The config has two values. `hidden` (default `true`) is the state of the titlebar. `keepResizeBorder` (default `true`) keeps the thin resize border while the titlebar is hidden. Only the file can change `keepResizeBorder`.
 - `Titlebar.init` loads the config before a tick can run. It does not look at the file again, so a change to the file has an effect at the next start.
 
@@ -171,10 +171,11 @@ For a legacy version, add `legacy/versions/<mc>/gradle.properties` and the versi
 
 - `tools/harness.ps1` starts the dev client of each target on the hidden desktop `WtdHarness` (`tools/run-hidden.ps1`), with no sound. Do not start a visible game for tests.
 - A target is `<loader>-<node>`, for example `fabric-1.21.11` or `forge-1.8.9`. There are 39 targets, one for each jar.
-- The script starts the Gradle run task with `-Pharness=<dir>`. The build then gives the game `-Dwtd.harness=<dir>` and a window of 1280 x 720. For a `modern/` target, the script also gives Gradle `--configure-on-demand`.
-- The game runs `core/dev/Harness`, which exists only with `-Dwtd.harness=<dir>`. `Titlebar.tick` calls it before it examines the window. It waits for the game window, then reads the commands of the commands file: `wait <ticks>`, `toggle`, `style`, `fullscreen <on|off>` and `quit`.
+- The script starts the Gradle run task with `-Pharness=<dir>`. The build then gives the game `-Dwtd.harness=<dir>`. For a `modern/` target, the script also gives Gradle `--configure-on-demand`.
+- The game runs `core/dev/Harness`, which exists only with `-Dwtd.harness=<dir>`. It reads `<dir>/commands.txt` one time, when `Titlebar.init` makes it. Its only state is the queue of commands and the counter of `wait`. The commands are `wait <ticks>`, `toggle`, `style`, `fullscreen <on|off>` and `quit`.
+- `Titlebar.tick` calls the harness after the style check. Thus a `style` command logs the style that the window has after the mod examined it in the same tick.
 - `toggle` calls `Titlebar.toggle`, the same call that the key makes.
-- Each `style` command is a checkpoint with two proofs. Proof 1: the game logs the style that it reads through `JnaWindow`, one tick after the command. Proof 2: the script reads the style of the same window from outside the game, with `EnumDesktopWindows` and `GetWindowLong`. The two values must be equal, and the style must agree with the `# expect` line before the command. An `# expect` line gives style bits (`caption off thickframe on`) or the full style (`style 0x16CF0000`).
+- Each `style` command is a checkpoint with two proofs. Proof 1: the game logs the style that it reads through `JnaWindow`. Proof 2: the script reads the style of the same window from outside the game, with `EnumDesktopWindows` and `GetWindowLong`. The two values must be equal, and the style must agree with the `# expect` line before the command. An `# expect` line gives style bits (`caption off thickframe on`, `popup on`) or the full style (`style 0x16CF0000`). The commands file has `wait 40` after each `style`, so the window does not change while the script reads it.
 - The script, not the game, sets the config file of a run. With no `# config-start` line in the commands file, the script deletes the config file before the start. With a `# config-start <json>` line, the script writes that text as the config file. After the game stops, the config file must contain the text of the `# config-end` line.
 - A run passes when all checkpoints pass, the harness log has no line that starts with `!`, the game gets to `quit`, and the config file agrees with the `# config-end` line. The result is in `<OutDir>\<target>\result.txt`, with the logs.
 - Forge and NeoForge targets of `modern/` get `earlyWindowControl = false` in `config/fml.toml`, so that the game makes its own window as vanilla does.
@@ -184,7 +185,7 @@ Each target has two runs, one for each commands file:
 
 | Commands file | Start | Checkpoints | Config file after the run |
 |---------------|-------|-------------|---------------------------|
-| `titlebar.txt` (default) | No config file | 4: no titlebar with the resize border, toggle to shown, toggle to hidden, hidden after fullscreen on and off | `"hidden": true` |
+| `titlebar.txt` (default) | No config file | 5: no titlebar with the resize border, toggle to shown, toggle to hidden, the popup style in fullscreen, hidden after fullscreen off | `"hidden": true` |
 | `titlebar-legacy.txt` | No config file | 3: the same with no fullscreen step | `"hidden": true` |
 | `remember.txt` | `{"hidden": false, "keepResizeBorder": false}` | 2: the style `0x16CF0000` of a window that no program changed, then toggle to hidden with no resize border | `"hidden": true` |
 
@@ -203,6 +204,8 @@ pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,fabric-1.21.11,neoforge-
 ## Known gaps
 
 - The harness toggles through the core. No automated test presses F12.
+- The toggle key does nothing while a screen is open: the title screen, a menu, chat or an inventory. The game counts the clicks of a key binding only while no screen is open, and the mod reads only these clicks.
+- 32-bit Java uses the stdcall calling convention in `JnaWindow`, which is a different code path from 64-bit Java. No test runs it.
 - The harness skips fullscreen on 1.8.9 and 1.12.2, because LWJGL 2 changes the display mode of the real monitor.
 - With the titlebar hidden in a window that is not maximized, each change to fullscreen and back can make the window taller by the height of the titlebar. The cause is that the mod keeps the outer size of the window when it removes the titlebar. This is not measured. The 1.0.0 mod did the same.
 - The harness runs the dev clients with `earlyWindowControl = false`. The early loading window of Forge and NeoForge in a normal install is the same game window, but no test uses it.

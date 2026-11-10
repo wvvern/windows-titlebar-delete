@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import wvv.windowstitlebardelete.core.FakePlatform;
 import wvv.windowstitlebardelete.core.FakeWindow;
-import wvv.windowstitlebardelete.core.Styles;
 import wvv.windowstitlebardelete.core.Titlebar;
 
 import java.io.File;
@@ -16,10 +15,12 @@ import java.util.List;
 import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HarnessTest {
+    /** {@link FakeWindow#NORMAL} without its titlebar and with the resize border. */
+    private static final int HIDDEN = 0x16050000;
+
     @TempDir
     File dir;
 
@@ -31,17 +32,15 @@ class HarnessTest {
         platform = new FakePlatform(new File(dir, "config"));
         window = new FakeWindow();
         Titlebar.init(platform, window);
+        Files.write(new File(dir, "commands.txt").toPath(), Arrays.asList(commands), StandardCharsets.UTF_8);
         harness = new Harness(dir, platform);
-        File file = new File(dir, "commands.txt");
-        Files.write(file.toPath(), Arrays.asList(commands), StandardCharsets.UTF_8);
-        assertTrue(file.setLastModified(System.currentTimeMillis() - 5000));
     }
 
-    /** Runs ticks in the order of the game, where the harness runs before the core examines the window. */
+    /** Runs ticks in the order of {@link Titlebar#tick}, where the harness runs after the core examines the window. */
     private void ticks(int n) {
         for (int i = 0; i < n; i++) {
-            harness.tick();
             Titlebar.tick();
+            harness.tick();
         }
     }
 
@@ -54,12 +53,13 @@ class HarnessTest {
     }
 
     @Test
-    void togglesAndLogsTheStyleOfTheNextTick() throws IOException {
+    void togglesAndLogsTheStyleAtOnce() throws IOException {
         start("style", "toggle", "style", "# a comment", "", "toggle", "style", "wait 3", "quit");
-        ticks(10);
-        int hidden = Styles.hidden(FakeWindow.NORMAL, true);
-        assertEquals(Arrays.asList("> style", style(hidden, true), "> toggle", "> style", style(FakeWindow.NORMAL, false), "> toggle",
-                "> style", style(hidden, true), "> wait 3", "> quit"), log());
+        ticks(1);
+        assertEquals(Arrays.asList("> style", style(HIDDEN, true), "> toggle", "> style", style(FakeWindow.NORMAL, false), "> toggle",
+                "> style", style(HIDDEN, true), "> wait 3"), log());
+        ticks(4);
+        assertEquals("> quit", log().get(9));
         assertEquals(Arrays.asList("quit"), platform.calls);
     }
 
@@ -73,33 +73,37 @@ class HarnessTest {
     }
 
     @Test
-    void waitsForTheWindow() throws IOException {
-        start("quit");
-        window.exists = false;
-        ticks(5);
-        assertTrue(platform.calls.isEmpty());
-        window.exists = true;
+    void styleAfterWaitIsTheStyleThatTheSameTickRepaired() throws IOException {
+        start("wait 1", "style");
+        ticks(2);
+        window.style = FakeWindow.NORMAL;
         ticks(1);
-        assertEquals(Arrays.asList("quit"), platform.calls);
+        assertEquals(Arrays.asList("> wait 1", "> style", style(HIDDEN, true)), log());
     }
 
     @Test
-    void runsAnywayAfterTheWindowLimit() throws IOException {
-        start("quit");
+    void styleWithNoWindowLogsAnError() throws IOException {
+        start("style");
         window.exists = false;
-        ticks(Harness.WINDOW_TICKS);
-        assertEquals(Arrays.asList("! no game window after " + Harness.WINDOW_TICKS + " ticks", "> quit"), log());
+        ticks(1);
+        assertEquals(Arrays.asList("> style", "! style: no game window"), log());
+    }
+
+    @Test
+    void missingCommandsFileLogsAnError() throws IOException {
+        new Harness(dir, null);
+        assertTrue(log().get(0).startsWith("! cannot read commands"));
     }
 
     @Test
     void forwardsFullscreenAndRejectsOtherText() throws IOException {
-        start("fullscreen on", "fullscreen off", "fullscreen maybe", "jump");
+        start("fullscreen on", "fullscreen off", "fullscreen maybe", "wait x", "jump");
         ticks(1);
         assertEquals(Arrays.asList("setFullscreen true", "setFullscreen false"), platform.calls);
         List<String> log = log();
-        assertEquals(6, log.size());
-        assertTrue(log.get(3).startsWith("! "));
-        assertEquals("! unknown command: jump", log.get(5));
-        assertThrows(IllegalArgumentException.class, () -> Harness.onOff("yes"));
+        assertEquals(Arrays.asList("> fullscreen on", "> fullscreen off", "> fullscreen maybe", "! unknown command: fullscreen maybe", "> wait x"),
+                log.subList(0, 5));
+        assertTrue(log.get(5).startsWith("! java.lang.NumberFormatException"));
+        assertEquals(Arrays.asList("> jump", "! unknown command: jump"), log.subList(6, 8));
     }
 }

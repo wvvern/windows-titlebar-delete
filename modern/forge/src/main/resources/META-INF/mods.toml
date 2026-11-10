@@ -13,7 +13,7 @@ logoFile = "assets/windowstitlebardelete/icon.png"
 # Forge 1.19 and later read this key, and it keeps a server that does not have the mod compatible in the server list.
 displayTest = "IGNORE_ALL_VERSION"
 description = '''
-Hides the Windows title bar of the game window.
+Hides the Windows titlebar of the game window.
 '''
 
 [[dependencies.${mod_id}]]

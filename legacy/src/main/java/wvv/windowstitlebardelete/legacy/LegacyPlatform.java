@@ -10,7 +10,6 @@ import wvv.windowstitlebardelete.core.dev.Harness;
 
 import java.io.File;
 
-/** The core port on Forge 1.8.9 and 1.12.2. */
 final class LegacyPlatform implements Platform {
     private static final Logger LOG = LogManager.getLogger(Titlebar.MOD_NAME);
 

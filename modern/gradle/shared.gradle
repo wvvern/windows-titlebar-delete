@@ -1,4 +1,3 @@
-// Shared setup for every Minecraft version node of common, fabric, forge and neoforge.
 def loader = project.parent.name
 def node = stonecutter.current.project
 
@@ -10,7 +9,7 @@ versionProperties.each { key, value -> project.ext.set(key, value) }
 def unobfuscated = stonecutter.eval(stonecutter.current.version, '>=26.1')
 def javaVersion = (project.java_version as String).toInteger()
 ext.modImplementation = unobfuscated ? 'implementation' : 'modImplementation'
-ext.commonNamed = { String path -> unobfuscated ? project.project(path) : project.dependencies.project(path: path, configuration: 'namedElements') }
+def commonNamed = { String path -> unobfuscated ? project.project(path) : project.dependencies.project(path: path, configuration: 'namedElements') }
 // The loaders that have a jar for this Minecraft version.
 ext.platforms = ['fabric', 'forge', 'neoforge'].findAll { rootProject.findProject(":${it}:${node}") != null }
 
@@ -39,15 +38,13 @@ dependencies {
 }
 
 if (loader == 'common') {
-    // The version-agnostic core is compiled straight into common (it has no Minecraft types).
+    // The core has no Minecraft types, so common compiles its sources and takes its resources.
     sourceSets.main.java.srcDir rootProject.file('../core/src/main/java')
-    // The core resources (the icon) go into the jar next to the core classes.
     sourceSets.main.resources.srcDir rootProject.file('../core/src/main/resources')
 } else if (project.hasProperty('harness')) {
-    // -Pharness=<dir> starts the test harness of the core (core/dev/Harness) in a window with a fixed size.
+    // -Pharness=<dir> starts the test harness of the core (core/dev/Harness).
     loom.runs.named('client') {
         property('wtd.harness', new File(project.property('harness') as String).absolutePath)
-        programArgs('--width', '1280', '--height', '720')
     }
 }
 
@@ -104,11 +101,10 @@ if (loader != 'common') {
             archiveClassifier = ''
         }
     }
-    ext.releaseJarTask = tasks.named(unobfuscated ? 'shadowJar' : 'remapJar')
     tasks.register('releaseJar') {
         group = 'build'
         description = 'Builds the jar to install for this loader and Minecraft version.'
-        dependsOn releaseJarTask
+        dependsOn tasks.named(unobfuscated ? 'shadowJar' : 'remapJar')
     }
     tasks.named('assemble') { dependsOn 'releaseJar' }
 }

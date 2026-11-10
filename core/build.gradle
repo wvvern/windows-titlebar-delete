@@ -27,7 +27,6 @@ dependencies {
 
 test { useJUnitPlatform() }
 
-// The rules are in docs/CODING_STANDARDS.md.
 checkstyle {
     toolVersion = '10.21.4'
     configDirectory = layout.projectDirectory.dir('config/checkstyle')

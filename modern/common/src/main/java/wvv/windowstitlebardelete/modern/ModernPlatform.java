@@ -9,7 +9,6 @@ import wvv.windowstitlebardelete.core.dev.Harness;
 
 import java.io.File;
 
-/** The core port on Minecraft 1.16.5 and later, for all loaders. */
 final class ModernPlatform implements Platform {
     private static final String MINECRAFT = /*$ minecraft*/ "26.3";
     private static final Logger LOG = LogManager.getLogger(Titlebar.MOD_NAME);

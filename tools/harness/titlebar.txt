@@ -1,9 +1,4 @@
-# Titlebar test for tools/harness.ps1, which starts the game with no config file.
-# The core harness skips lines that start with "#".
-# A "# expect <bit> <on|off> ..." line tells harness.ps1 what the next "style" line must show.
-# The bits are caption (0x00C00000) and thickframe (0x00040000).
-# After each "style", "wait 40" keeps the window stable while harness.ps1 reads the style from outside the game.
-# The "# config-end" line gives text that the config file must have after the game stops.
+# The description of tools/harness.ps1 gives the rules for this file.
 # config-end "hidden": true
 wait 100
 # expect caption off thickframe on
@@ -19,6 +14,9 @@ style
 wait 40
 fullscreen on
 wait 100
+# expect popup on
+style
+wait 40
 fullscreen off
 wait 100
 # expect caption off thickframe on

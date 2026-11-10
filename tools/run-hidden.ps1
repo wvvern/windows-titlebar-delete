@@ -1,20 +1,18 @@
 <#
 .SYNOPSIS
-Starts a Gradle run task (or a command line) on the hidden Windows desktop WtdHarness. The game window does not show,
-take focus or show in the taskbar. Prints the process id of the cmd.exe that runs it.
+Starts a Gradle run task on the hidden Windows desktop WtdHarness. The game window does not show, take focus or show
+in the taskbar. Prints the process id of the cmd.exe that runs it.
 
 .EXAMPLE
 ./tools/run-hidden.ps1 -Dir legacy -Task ":1.8.9:runClientDev" -Harness C:\temp\harness -Log C:\temp\run.log
-./tools/run-hidden.ps1 -Dir legacy -CommandLine "`"java.exe`" -cp ..." -Log C:\temp\run.log  # a command, not a Gradle task
 #>
 param(
     [Parameter(Mandatory = $true)][string]$Dir,
-    [string]$Task,
+    [Parameter(Mandatory = $true)][string]$Task,
     # More options for Gradle, for example --configure-on-demand.
     [string]$Options,
-    [string]$Harness,
-    [string]$CommandLine,
-    [string]$Log = "$env:TEMP\wtd-hidden.log"
+    [Parameter(Mandatory = $true)][string]$Harness,
+    [Parameter(Mandatory = $true)][string]$Log
 )
 
 Add-Type @"
@@ -43,12 +41,9 @@ $desktop = [HiddenDesktop]::CreateDesktop($desktopName, [IntPtr]::Zero, [IntPtr]
 if ($desktop -eq [IntPtr]::Zero) { throw "CreateDesktop failed: $([Runtime.InteropServices.Marshal]::GetLastWin32Error())" }
 
 $Dir = (Resolve-Path $Dir).Path
-if (-not $CommandLine) {
-    $gradlew = Join-Path $Dir "gradlew.bat"
-    # --no-daemon: a daemon from the visible desktop starts the game window on that desktop.
-    $CommandLine = "`"$gradlew`" --no-daemon $Options $Task `"-Pharness=$Harness`""
-}
-$commandLine = "cmd.exe /s /c `"$CommandLine > `"$Log`" 2>&1`""
+$gradlew = Join-Path $Dir "gradlew.bat"
+# --no-daemon: a daemon from the visible desktop starts the game window on that desktop.
+$commandLine = "cmd.exe /s /c `"`"$gradlew`" --no-daemon $Options $Task `"-Pharness=$Harness`" > `"$Log`" 2>&1`""
 
 $si = New-Object HiddenDesktop+STARTUPINFO
 $si.cb = [Runtime.InteropServices.Marshal]::SizeOf($si)

@@ -3,7 +3,6 @@ package wvv.windowstitlebardelete.modern;
 import net.minecraft.client.Minecraft;
 import wvv.windowstitlebardelete.core.dev.Harness;
 
-/** What the development test harness needs from Minecraft 1.16.5 and later. */
 final class ModernHarnessHost implements Harness.Host {
     @Override
     public void setFullscreen(boolean on) {

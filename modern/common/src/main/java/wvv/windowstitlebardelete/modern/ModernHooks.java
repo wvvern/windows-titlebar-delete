@@ -33,7 +33,7 @@ public final class ModernHooks {
     }
 
     /** The toggle key, made on first use because the game makes its key bindings only when it makes the options. */
-    static KeyMapping key() {
+    private static KeyMapping key() {
         if (key == null) {
             // The key name gives the GLFW code up to 1.21.11 and the SDL scancode on 26.x.
             int f12 = InputConstants.getKey("key.keyboard.f12").getValue();

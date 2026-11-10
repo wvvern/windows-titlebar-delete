@@ -1,4 +1,3 @@
-// The Forge build of each subproject in versions/<mc>, which compiles the core (../core) into the jar.
 plugins {
     java
     id("gg.essential.loom")
@@ -35,7 +34,6 @@ val generateBuildInfo = tasks.register("generateBuildInfo") {
             """
             |package wvv.windowstitlebardelete.legacy;
             |
-            |/** Values that the build writes into the code. */
             |final class BuildInfo {
             |    static final String VERSION = "$version";
             |    static final String MINECRAFT_RANGE = "[$minecraft]";
@@ -111,9 +109,8 @@ tasks.register<JavaExec>("runClientDev") {
         "-Dfabric.dli.env=client",
         "-Dfabric.dli.main=net.minecraft.launchwrapper.Launch",
     )
-    // -Pharness=<dir> enables the file-driven test harness at a fixed window size.
+    // -Pharness=<dir> starts the test harness of the core (core/dev/Harness).
     if (project.hasProperty("harness")) {
         systemProperty("wtd.harness", File(project.property("harness") as String).absolutePath)
-        args("--width", "1280", "--height", "720")
     }
 }
