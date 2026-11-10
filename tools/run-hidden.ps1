@@ -1,12 +1,14 @@
 <#
 .SYNOPSIS
-Starts a Gradle run task on the hidden Windows desktop WtdHarness. The game window does not show, take focus or show
-in the taskbar. Prints the process id of the cmd.exe that runs it.
+Starts a Gradle run task on a hidden Windows desktop, where the game window does not show, take focus or show in the
+taskbar, and prints the process id of the cmd.exe that runs it.
 
 .EXAMPLE
-./tools/run-hidden.ps1 -Dir legacy -Task ":1.8.9:runClientDev" -Harness C:\temp\harness -Log C:\temp\run.log
+./tools/run-hidden.ps1 -Desktop WtdHarness -Dir legacy -Task ":1.8.9:runClientDev" -Harness C:\temp\harness -Log C:\temp\run.log
 #>
 param(
+    # The name of the hidden desktop.
+    [Parameter(Mandatory = $true)][string]$Desktop,
     [Parameter(Mandatory = $true)][string]$Dir,
     [Parameter(Mandatory = $true)][string]$Task,
     # More options for Gradle, for example --configure-on-demand.
@@ -35,10 +37,10 @@ public static class HiddenDesktop {
 }
 "@
 
-$desktopName = "WtdHarness"
-# GENERIC_ALL. If the desktop exists, CreateDesktop returns it.
-$desktop = [HiddenDesktop]::CreateDesktop($desktopName, [IntPtr]::Zero, [IntPtr]::Zero, 0, 0x10000000, [IntPtr]::Zero)
-if ($desktop -eq [IntPtr]::Zero) { throw "CreateDesktop failed: $([Runtime.InteropServices.Marshal]::GetLastWin32Error())" }
+# The access is GENERIC_ALL, and CreateDesktop returns the desktop if it exists.
+if ([HiddenDesktop]::CreateDesktop($Desktop, [IntPtr]::Zero, [IntPtr]::Zero, 0, 0x10000000, [IntPtr]::Zero) -eq [IntPtr]::Zero) {
+    throw "CreateDesktop failed: $([Runtime.InteropServices.Marshal]::GetLastWin32Error())"
+}
 
 $Dir = (Resolve-Path $Dir).Path
 $gradlew = Join-Path $Dir "gradlew.bat"
@@ -47,7 +49,7 @@ $commandLine = "cmd.exe /s /c `"`"$gradlew`" --no-daemon $Options $Task `"-Pharn
 
 $si = New-Object HiddenDesktop+STARTUPINFO
 $si.cb = [Runtime.InteropServices.Marshal]::SizeOf($si)
-$si.lpDesktop = $desktopName
+$si.lpDesktop = $Desktop
 $pi = New-Object HiddenDesktop+PROCESS_INFORMATION
 # CREATE_NO_WINDOW: no console window on the hidden desktop.
 if (-not [HiddenDesktop]::CreateProcess([NullString]::Value, $commandLine, [IntPtr]::Zero, [IntPtr]::Zero, $false, 0x08000000,

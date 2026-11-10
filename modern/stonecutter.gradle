@@ -6,7 +6,7 @@ plugins {
     id 'com.gradleup.shadow' apply false
 }
 
-// The version whose code is active (uncommented) in src/. "Set active project to X" tasks rewrite this line.
+// The code of this version is active in src/, and the Stonecutter task "Set active project to X" writes this line.
 stonecutter.active '26.3'
 
 stonecutter.parameters {
@@ -14,17 +14,4 @@ stonecutter.parameters {
     def node = new Properties()
     file("versions/${current.project}/gradle.properties").withInputStream { node.load(it) }
     swaps.put('minecraft', "\"${node.minecraft_version}\";")
-}
-
-tasks.register('collectJars', Copy) {
-    group = 'build'
-    description = 'Builds every loader x Minecraft version release jar and copies them to build/libs.'
-    subprojects.findAll { it.parent?.name in ['fabric', 'forge', 'neoforge'] }.each { node ->
-        dependsOn "${node.path}:releaseJar"
-        from(node.layout.buildDirectory.dir('libs')) {
-            include '*.jar'
-            exclude '*-raw.jar', '*-sources.jar', '*-dev-shadow.jar'
-        }
-    }
-    into layout.buildDirectory.dir('libs')
 }

@@ -19,9 +19,10 @@ public final class Titlebar {
     public static final String KEY_NAME = "Toggle the titlebar";
     static final String CONFIG_FILE = "windowstitlebardelete.json";
 
+    // The public methods are synchronized, because Forge and NeoForge make the mod on a loader thread and the ticks run on the client thread.
     private static Platform platform;
     private static File configFile;
-    private static volatile Config config = Config.DEFAULTS;
+    private static Config config = Config.DEFAULTS;
     private static NativeWindow window = NativeWindow.NONE;
     private static Harness harness;
 
@@ -83,7 +84,6 @@ public final class Titlebar {
             if (wanted != style) window.setStyle(wanted);
         } catch (Throwable e) {
             nativeFailed(platform, e);
-            window = NativeWindow.NONE;
         }
     }
 
@@ -93,17 +93,17 @@ public final class Titlebar {
             return window.found() ? Integer.valueOf(window.style()) : null;
         } catch (Throwable e) {
             nativeFailed(platform, e);
-            window = NativeWindow.NONE;
             return null;
         }
     }
 
     private static void nativeFailed(Platform p, Throwable e) {
+        window = NativeWindow.NONE;
         p.warn(MOD_NAME + " cannot change the game window on " + p.describe() + ". The titlebar stays as it is.", e);
     }
 
     /** True while the mod keeps the titlebar hidden. */
-    public static boolean hidden() { return config.hidden(); }
+    public static synchronized boolean hidden() { return config.hidden(); }
 
     private static Config load() {
         if (!configFile.isFile()) {

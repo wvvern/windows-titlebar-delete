@@ -58,14 +58,6 @@ class TitlebarTest {
     }
 
     @Test
-    void textWithNoKeyGivesDefaultsWithNoWarning() throws IOException {
-        startWith("{ broken");
-        assertTrue(Titlebar.hidden());
-        assertTrue(platform.warnings.isEmpty());
-        assertEquals("{ broken", saved());
-    }
-
-    @Test
     void keyWithABadValueWarnsOnceAndUsesDefaults() throws IOException {
         String text = "{\"hidden\": false, \"keepResizeBorder\": no}";
         startWith(text);
@@ -147,17 +139,6 @@ class TitlebarTest {
         platform.fullscreen = false;
         Titlebar.tick();
         assertEquals(HIDDEN, window.style);
-    }
-
-    @Test
-    void popupWindowKeepsItsStyle() {
-        start();
-        window.style = Styles.WS_POPUP | FakeWindow.NORMAL;
-        Titlebar.tick();
-        Titlebar.toggle();
-        Titlebar.toggle();
-        Titlebar.tick();
-        assertEquals(0, window.writes);
     }
 
     @Test

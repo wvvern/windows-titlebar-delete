@@ -23,10 +23,8 @@ plugins {
 
 rootProject.name = 'windowstitlebardelete-modern'
 
-if (file('../core/build.gradle').exists()) {
-    include 'core'
-    project(':core').projectDir = file('../core')
-}
+include 'core'
+project(':core').projectDir = file('../core')
 
 stonecutter {
     kotlinController = false

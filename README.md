@@ -70,8 +70,6 @@ The mod reads the file only when the game starts. Thus, close the game before yo
 
 ## Known limits
 
-- The mod works only on Windows.
-- The key does nothing while a screen is open, because the game counts the presses of a key only while no screen is open.
 - The mod does not change the window while the game is in fullscreen. If you press the key in fullscreen, you see the result when you go back to the window.
 - If the titlebar is hidden and the window is not maximized, the window can become taller each time you go to fullscreen and back.
 - If a different mod makes the window borderless, that mod keeps control of the window. Windows Titlebar Delete does not change such a window.
@@ -79,9 +77,11 @@ The mod reads the file only when the game starts. Thus, close the game before yo
 ## Build from source
 
 ```bash
-cd modern && ./gradlew collectJars   # Fabric, Forge and NeoForge jars for 1.16.5 to 26.3 -> modern/build/libs/
-cd legacy && ./gradlew build         # Forge 1.8.9 and 1.12.2 jars -> legacy/versions/<mc>/build/libs/
+cd modern && ./gradlew --configure-on-demand :fabric:1.21.11:releaseJar :neoforge:1.21.11:releaseJar
+cd legacy && ./gradlew build
 ```
+
+The first command builds the jars of one Minecraft version, and each jar is in `modern/<loader>/versions/<version>/build/libs/`. The second command builds the Forge 1.8.9 and 1.12.2 jars, and each jar is in `legacy/versions/<version>/build/libs/`.
 
 Gradle downloads the JDKs that it needs. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and [docs/RELEASING.md](docs/RELEASING.md) for releases.
 

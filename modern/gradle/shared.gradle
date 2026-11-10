@@ -9,9 +9,6 @@ versionProperties.each { key, value -> project.ext.set(key, value) }
 def unobfuscated = stonecutter.eval(stonecutter.current.version, '>=26.1')
 def javaVersion = (project.java_version as String).toInteger()
 ext.modImplementation = unobfuscated ? 'implementation' : 'modImplementation'
-def commonNamed = { String path -> unobfuscated ? project.project(path) : project.dependencies.project(path: path, configuration: 'namedElements') }
-// The loaders that have a jar for this Minecraft version.
-ext.platforms = ['fabric', 'forge', 'neoforge'].findAll { rootProject.findProject(":${it}:${node}") != null }
 
 group = "${rootProject.maven_group}.${loader}"
 version = "${rootProject.mod_version}+${project.minecraft_version}"
@@ -27,7 +24,7 @@ architectury {
 }
 
 base {
-    archivesName = "$rootProject.archives_name-$loader"
+    archivesName = "$rootProject.mod_id-$loader"
 }
 
 dependencies {
@@ -44,25 +41,13 @@ if (loader == 'common') {
 } else if (project.hasProperty('harness')) {
     // -Pharness=<dir> starts the test harness of the core (core/dev/Harness).
     loom.runs.named('client') {
-        property('wtd.harness', new File(project.property('harness') as String).absolutePath)
+        property('wtd.harness', project.property('harness') as String)
     }
 }
 
-java {
-    sourceCompatibility = JavaVersion.toVersion(javaVersion)
-    targetCompatibility = JavaVersion.toVersion(javaVersion)
-    toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) }
-}
+java { toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) } }
 
-tasks.withType(JavaCompile).configureEach {
-    it.options.encoding = 'UTF-8'
-    // Java 8 has no --release flag for the same JDK, so the toolchain alone sets the level there.
-    if (javaVersion > 8) it.options.release = javaVersion
-}
-
-tasks.withType(AbstractArchiveTask).configureEach {
-    zip64 = true
-}
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 
 processResources {
     def props = [java_version: javaVersion]
@@ -83,7 +68,7 @@ if (loader != 'common') {
 
     def commonNode = ":common:${node}"
     dependencies {
-        common(commonNamed(commonNode)) { transitive false }
+        common(unobfuscated ? project(commonNode) : project(path: commonNode, configuration: 'namedElements')) { transitive false }
         shadowBundle project(path: commonNode, configuration: "transformProduction${platformName}")
     }
 

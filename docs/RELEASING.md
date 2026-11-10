@@ -5,21 +5,12 @@ A release is a tag such as `v2.0.0`. CI builds all jars, makes a GitHub release 
 ## Steps
 
 1. Make sure that CI is green on `master`.
-2. Run the harness for all 39 targets on a Windows computer, one time with each commands file (commands below). Each target must print `PASS` in the two runs. CI does not run the harness.
+2. Run the harness for each target on a Windows computer, one time with each commands file (see the Harness section of [ARCHITECTURE.md](ARCHITECTURE.md)). Each target must print `PASS` in the two runs. CI does not run the harness.
 3. Select the version (semantic versioning): a breaking config change increases the major number, a `feat` increases the minor number, only `fix` and `perf` increase the patch number.
-4. Set the version in two places: `mod_version` in `modern/gradle.properties` and `modVersion` in `legacy/gradle.properties`. The two values must be the same. CI builds the jars with the version of the tag.
+4. Set the version: `mod_version` in `modern/gradle.properties`. The legacy build reads the same value. CI builds the jars with the version of the tag.
 5. Write the `CHANGELOG.md` section for the version (rules below). Put it at the top, under the title.
 6. Commit as `chore: Release X.Y.Z`, push, and push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-7. Monitor the CI run. Check that the release has 39 jars and the notes, and that Modrinth has 39 new versions.
-
-A target is `<loader>-<node>`, where the node is a version in `modern/settings.gradle` or `1.8.9` or `1.12.2`. Give all targets of the release in `-Targets`, for example:
-
-```powershell
-pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,forge-1.12.2,fabric-26.3,neoforge-26.3 -OutDir build\harness"
-pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,forge-1.12.2,fabric-26.3,neoforge-26.3 -Commands remember.txt -OutDir build\harness-remember"
-```
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the harness. With no `-Targets`, the script runs only the two legacy targets.
+7. Monitor the CI run. Check that the release has each jar of the table below and the notes, and that Modrinth has one new version for each jar.
 
 ## Jars
 

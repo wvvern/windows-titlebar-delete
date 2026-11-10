@@ -1,17 +1,19 @@
+import java.util.Properties
+
 plugins {
     java
     id("gg.essential.loom")
     id("dev.architectury.architectury-pack200")
 }
 
-val baseGroup: String by project
 val modid: String by project
-val modVersion: String by project
 val mcVersion: String by project
 val mappingsVersion: String by project
 val forgeVersion: String by project
+// The version of the mod is -PmodVersion when CI gives it, and mod_version of the modern build if not.
+val modVersion = providers.gradleProperty("modVersion").orNull
+    ?: Properties().apply { rootProject.file("../modern/gradle.properties").inputStream().use { load(it) } }.getProperty("mod_version")
 
-group = baseGroup
 version = "$modVersion+$mcVersion"
 base.archivesName.set("$modid-forge")
 
@@ -22,10 +24,8 @@ java {
 // Writes BuildInfo.java so that the @Mod annotation gets the mod version and the Minecraft version from the build.
 val generateBuildInfo = tasks.register("generateBuildInfo") {
     val outputDir = layout.buildDirectory.dir("generated/buildinfo")
-    val version = modVersion
-    val minecraft = mcVersion
-    inputs.property("modVersion", version)
-    inputs.property("mcVersion", minecraft)
+    inputs.property("modVersion", modVersion)
+    inputs.property("mcVersion", mcVersion)
     outputs.dir(outputDir)
     doLast {
         val file = outputDir.get().file("wvv/windowstitlebardelete/legacy/BuildInfo.java").asFile
@@ -35,8 +35,8 @@ val generateBuildInfo = tasks.register("generateBuildInfo") {
             |package wvv.windowstitlebardelete.legacy;
             |
             |final class BuildInfo {
-            |    static final String VERSION = "$version";
-            |    static final String MINECRAFT_RANGE = "[$minecraft]";
+            |    static final String VERSION = "$modVersion";
+            |    static final String MINECRAFT_RANGE = "[$mcVersion]";
             |
             |    private BuildInfo() {
             |    }
@@ -56,14 +56,7 @@ sourceSets.main {
     output.setResourcesDir(sourceSets.main.flatMap { it.java.classesDirectory })
 }
 
-loom {
-    runConfigs {
-        remove(getByName("server"))
-    }
-    forge {
-        pack200Provider.set(dev.architectury.pack200.java.Pack200Adapter())
-    }
-}
+loom.forge.pack200Provider.set(dev.architectury.pack200.java.Pack200Adapter())
 
 dependencies {
     minecraft("com.mojang:minecraft:$mcVersion")
@@ -111,6 +104,6 @@ tasks.register<JavaExec>("runClientDev") {
     )
     // -Pharness=<dir> starts the test harness of the core (core/dev/Harness).
     if (project.hasProperty("harness")) {
-        systemProperty("wtd.harness", File(project.property("harness") as String).absolutePath)
+        systemProperty("wtd.harness", project.property("harness")!!)
     }
 }

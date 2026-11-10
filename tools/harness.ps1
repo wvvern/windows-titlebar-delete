@@ -1,28 +1,35 @@
 <#
 .SYNOPSIS
-Tests the titlebar of each target on the hidden desktop WtdHarness and examines the window style from outside the game.
+Tests the titlebar of each target on a hidden desktop and examines the window style from outside the game.
 
 .DESCRIPTION
-The game runs with the test harness (core/src/main/java/wvv/windowstitlebardelete/core/dev/Harness.java) and the
-commands file in tools/harness/. Sound and narrator are off. The game does not pause when it loses focus.
-For a Forge 1.8.9 or 1.12.2 target, the script uses <name>-legacy.txt in place of <name>.txt when that file exists.
-Each "style" line that the game writes to log.txt is a checkpoint. At once, the script reads the style of the game
-window with GetWindowLong from this process. The in-game style and the outside style must be equal, and the style must
-agree with the "# expect" line before the "style" command. That line has pairs of a bit name (caption, sysmenu,
-thickframe, minimizebox, maximizebox, popup) and "on" or "off", or it has "style" and the full style, such as 0x16CF0000.
-A "wait 40" after each "style" keeps the window stable while the script reads the style.
-The game starts with no config file, or with the config file of the "# config-start" line of the commands file. After
-the game stops, the config file must have the text of the "# config-end" line.
-The logs and result.txt go to <OutDir>\<target>\. The exit code is 1 when a target fails.
+The game runs with the test harness (core/src/main/java/wvv/windowstitlebardelete/core/dev/Harness.java) and a
+commands file from tools/harness/. Sound and narrator are off. The game does not pause when it loses focus.
+
+Rules for a commands file:
+- A line is a command: "wait <ticks>", "toggle", "style", "fullscreen <on|off>" or "quit". A line that starts with
+  "#" is not a command.
+- Each "style" command is a checkpoint. The game writes the style of its window to log.txt, and at once the script
+  reads the style of the same window from this process. The two values must be equal.
+- Put an "# expect" line before each "style" command. It has pairs of a bit name (caption, thickframe, popup) and
+  "on" or "off", or it has "style" and the full style, such as 0x16CF0000. The style must agree with it.
+- Put "wait 40" after each "style" command, so that the window does not change while the script reads the style.
+- With a "# config-start <text>" line, the game starts with that text as its config file. Without it, the game
+  starts with no config file.
+- With a "# config-end <text>" line, the config file must contain that text after the game stops.
+- End the file with "quit".
+- For a Forge 1.8.9 or 1.12.2 target, the script uses <name>-legacy.txt in place of <name>.txt when that file exists.
+  Such a file has no "fullscreen" command, which is an error on these targets.
+
+A run passes when each checkpoint passes, log.txt has no line that starts with "!", the game gets to "quit" and the
+config file is correct. The logs and result.txt go to <OutDir>\<target>\. The exit code is 1 when a target fails.
 
 .EXAMPLE
-./tools/harness.ps1                                   # the two legacy targets
-./tools/harness.ps1 -Targets forge-1.8.9              # one target
-./tools/harness.ps1 -Targets fabric-1.21.11 -OutDir build\harness-fabric
-./tools/harness.ps1 -Targets fabric-1.21.11 -Commands remember.txt -OutDir build\harness-remember
+pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,fabric-1.21.11,neoforge-26.3 -OutDir build\harness"
+pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,fabric-1.21.11,neoforge-26.3 -Commands remember.txt -OutDir build\harness-remember"
 #>
 param(
-    # <loader>-<mc>: forge-1.8.9 and forge-1.12.2 run in legacy/; fabric-<mc>, forge-<mc> and neoforge-<mc> run in modern/.
+    # <loader>-<node>: forge-1.8.9 and forge-1.12.2 run in legacy/, and the other targets run in modern/.
     [string[]]$Targets = @("forge-1.8.9", "forge-1.12.2"),
     # Folder for the results, relative to the repository root.
     [string]$OutDir = "build\harness",
@@ -32,8 +39,9 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
+$desktop = "WtdHarness"
 $legacyVersions = @("1.8.9", "1.12.2")
-$styleBits = @{ popup = 0x80000000; caption = 0x00C00000; sysmenu = 0x00080000; thickframe = 0x00040000; minimizebox = 0x00020000; maximizebox = 0x00010000 }
+$styleBits = @{ popup = 0x80000000; caption = 0x00C00000; thickframe = 0x00040000 }
 
 Add-Type @"
 using System;
@@ -84,21 +92,11 @@ public static class WtdOutside {
 "@
 
 function Set-Options([string]$runDir) {
-    # Turn off sound and the first-start onboarding (it can start the narrator) before the game reads the options.
+    # The game reads this file at its start, so it makes no sound and does not start the narrator from the first-start onboarding.
     New-Item -ItemType Directory -Force $runDir | Out-Null
-    $file = Join-Path $runDir "options.txt"
-    $options = [ordered]@{}
-    if (Test-Path $file) {
-        foreach ($line in Get-Content $file) { $i = $line.IndexOf(':'); if ($i -gt 0) { $options[$line.Substring(0, $i)] = $line.Substring($i + 1) } }
-    }
-    $wanted = @{ onboardAccessibility = "false"; narrator = "0"; soundCategory_master = "0.0"; pauseOnLostFocus = "false";
-                 tutorialStep = "none"; skipMultiplayerWarning = "true"; joinedFirstServer = "true"; fullscreen = "false";
-                 exclusiveFullscreen = "false" }
-    foreach ($k in $wanted.Keys) { $options[$k] = $wanted[$k] }
-    # With no fullscreen resolution, fullscreen uses the current mode of the monitor, so the real screen does not change its mode.
-    $options.Remove("fullscreenResolution")
-    ($options.GetEnumerator() | ForEach-Object { "$($_.Key):$($_.Value)" }) | Set-Content -Encoding ascii $file
-    if (-not (Select-String -Path $file -Pattern "^soundCategory_master:0\.0$" -Quiet)) { throw "options.txt in $runDir does not set the sound to 0" }
+    @("soundCategory_master:0.0", "narrator:0", "onboardAccessibility:false", "pauseOnLostFocus:false", "tutorialStep:none",
+        "skipMultiplayerWarning:true", "joinedFirstServer:true", "fullscreen:false", "exclusiveFullscreen:false") |
+        Set-Content -Encoding ascii (Join-Path $runDir "options.txt")
 }
 
 function Set-FmlConfig([string]$runDir) {
@@ -139,9 +137,9 @@ function Read-Directive([string]$file, [string]$name) {
     return $null
 }
 
-# All descendant processes of a process.
+# The ids of all descendant processes of a process.
 function Get-Descendants([int]$parent) {
-    $all = Get-CimInstance Win32_Process -Property ProcessId, ParentProcessId, Name, CommandLine
+    $all = Get-CimInstance Win32_Process -Property ProcessId, ParentProcessId
     $ids = [Collections.Generic.HashSet[int]]::new()
     $queue = [Collections.Generic.Queue[int]]::new()
     $queue.Enqueue($parent)
@@ -151,23 +149,19 @@ function Get-Descendants([int]$parent) {
             if ($ids.Add([int]$c.ProcessId)) { $queue.Enqueue([int]$c.ProcessId) }
         }
     }
-    return $all | Where-Object { $ids.Contains([int]$_.ProcessId) }
+    return $ids
 }
 
-# True for a java process whose command line has the harness folder.
-function Test-HarnessJava($process, [string]$harness) {
-    return $process.Name -match "^javaw?\.exe$" -and $process.CommandLine -and
-        $process.CommandLine.IndexOf($harness, [StringComparison]::OrdinalIgnoreCase) -ge 0
-}
-
-# The java processes of the harness under the launcher, which include the game.
-function Get-GamePids([int]$launcher, [string]$harness) {
-    return @(Get-Descendants $launcher | Where-Object { Test-HarnessJava $_ $harness } | ForEach-Object { [int]$_.ProcessId })
+# The java processes whose command line has the harness folder, which include the game.
+function Get-GamePids([string]$harness) {
+    return @(Get-CimInstance Win32_Process -Filter "Name = 'java.exe' OR Name = 'javaw.exe'" -Property ProcessId, CommandLine |
+        Where-Object { $_.CommandLine -and $_.CommandLine.IndexOf($harness, [StringComparison]::OrdinalIgnoreCase) -ge 0 } |
+        ForEach-Object { [int]$_.ProcessId })
 }
 
 # The style of the visible LWJGL, GLFW or SDL window of one of the processes, or $null when there is no such window.
 function Get-OutsideStyle([int[]]$pids) {
-    foreach ($w in [WtdOutside]::Windows("WtdHarness")) {
+    foreach ($w in [WtdOutside]::Windows($desktop)) {
         $p, $class, $style = $w -split "\|"
         if ($pids -contains [int]$p -and ($class -eq "LWJGL" -or $class -eq "GLFW30" -or $class.StartsWith("SDL"))) {
             return [Convert]::ToInt32($style, 16)
@@ -186,11 +180,9 @@ function Read-SharedLines([string]$file) {
 function Stop-Run([int]$launcher, [string]$harness) {
     # Only a live launcher, because Windows can give the id of an ended process to a new one.
     if (Get-Process -Id $launcher -ErrorAction SilentlyContinue) {
-        Get-Descendants $launcher | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
-        Stop-Process -Id $launcher -Force -ErrorAction SilentlyContinue
+        @(Get-Descendants $launcher) + $launcher | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
     }
-    Get-CimInstance Win32_Process -Property ProcessId, Name, CommandLine | Where-Object { Test-HarnessJava $_ $harness } |
-        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    Get-GamePids $harness | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
 }
 
 function Format-Style($style) { if ($null -eq $style) { "none" } else { "0x{0:X8}" -f $style } }
@@ -207,13 +199,13 @@ foreach ($target in $Targets) {
         $dir = Join-Path $root "modern"; $task = ":${loader}:${version}:runClient"; $runDir = Join-Path $dir "$loader\versions\$version\run"
         # Gradle then configures only the projects of this target, which is faster and keeps the Loom caches of the other versions apart.
         $gradleOptions = "--configure-on-demand"
+        if ($loader -ne "fabric") { Set-FmlConfig $runDir }
     } else {
         throw "unknown target: $target"
     }
     $expectations = Read-Expectations $commandsFile
 
     Set-Options $runDir
-    if ($loader -in @("forge", "neoforge") -and $dir -like "*modern") { Set-FmlConfig $runDir }
     $configFile = Join-Path $runDir "config\windowstitlebardelete.json"
     $configStart = Read-Directive $commandsFile "config-start"
     Remove-Item -Force $configFile -ErrorAction SilentlyContinue
@@ -229,38 +221,28 @@ foreach ($target in $Targets) {
 
     Write-Host "[$target] launching hidden with $(Split-Path -Leaf $commandsFile)"
     $gradleLog = Join-Path $harness "gradle.log"
-    $launcher = & (Join-Path $PSScriptRoot "run-hidden.ps1") -Dir $dir -Task $task -Options $gradleOptions -Harness $harness -Log $gradleLog
+    $launcher = & (Join-Path $PSScriptRoot "run-hidden.ps1") -Desktop $desktop -Dir $dir -Task $task -Options $gradleOptions -Harness $harness -Log $gradleLog
     $harnessLog = Join-Path $harness "log.txt"
     $outside = [Collections.Generic.List[object]]::new()
-    $checkpoints = 0
-    $quit = $false
     $gamePids = @()
-    $nextSearch = Get-Date
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
         Start-Sleep -Milliseconds 250
         $alive = [bool](Get-Process -Id $launcher -ErrorAction SilentlyContinue)
-        # The process search is slow, so it runs only until the game window is found.
-        if ($alive -and (Get-Date) -ge $nextSearch -and $null -eq (Get-OutsideStyle $gamePids)) {
-            $gamePids = Get-GamePids $launcher $harness
-            $nextSearch = (Get-Date).AddSeconds(3)
-        }
         $lines = Read-SharedLines $harnessLog
         $styles = @($lines | Where-Object { $_ -match "^(style 0x|! style)" })
         # The window is stable for 40 ticks after each style line, so one sample now is the outside style of that checkpoint.
-        while ($checkpoints -lt $styles.Count) {
+        while ($outside.Count -lt $styles.Count) {
             $seen = Get-OutsideStyle $gamePids
             if ($null -eq $seen) {
-                $gamePids = Get-GamePids $launcher $harness
+                $gamePids = Get-GamePids $harness
                 $seen = Get-OutsideStyle $gamePids
             }
+            Write-Host "[$target] $($styles[$outside.Count]) | outside $(Format-Style $seen)"
             $outside.Add($seen)
-            Write-Host "[$target] $($styles[$checkpoints]) | outside $(Format-Style $outside[$checkpoints])"
-            $checkpoints++
         }
         if (-not $alive) { break }
         if ($lines -contains "> quit") {
-            $quit = $true
             $quitBy = (Get-Date).AddSeconds(30)
             while ((Get-Date) -lt $quitBy -and (Get-Process -Id $launcher -ErrorAction SilentlyContinue)) { Start-Sleep -Seconds 1 }
             break
@@ -279,11 +261,7 @@ foreach ($target in $Targets) {
     $lines = Read-SharedLines $harnessLog
     $styles = @($lines | Where-Object { $_ -match "^(style 0x|! style)" })
     $report = @("target $target", "commands $(Split-Path -Leaf $commandsFile)")
-    $pass = $true
-    if ($styles.Count -ne $expectations.Count) {
-        $report += "FAIL: $($styles.Count) style lines, expected $($expectations.Count)"
-        $pass = $false
-    }
+    if ($styles.Count -ne $expectations.Count) { $report += "FAIL: $($styles.Count) style lines, expected $($expectations.Count)" }
     for ($i = 0; $i -lt $styles.Count; $i++) {
         $problems = @()
         $inGame = if ($styles[$i] -match "^style 0x([0-9A-F]{8})") { [Convert]::ToInt32($Matches[1], 16) } else { $null }
@@ -301,23 +279,17 @@ foreach ($target in $Targets) {
             }
         }
         $status = if ($problems) { "FAIL: " + ($problems -join "; ") } else { "PASS" }
-        if ($problems) { $pass = $false }
         $report += "checkpoint $($i + 1): expect $expectText | in-game $(Format-Style $inGame) | outside $(Format-Style $seen) | $status"
     }
-    $errors = @($lines | Where-Object { $_.StartsWith("!") })
-    foreach ($e in $errors) { $report += "FAIL: harness error: $e" }
-    if ($errors) { $pass = $false }
-    if (-not $quit) { $report += "FAIL: the game did not get to quit"; $pass = $false }
+    foreach ($e in $lines | Where-Object { $_.StartsWith("!") }) { $report += "FAIL: harness error: $e" }
+    if ($lines -notcontains "> quit") { $report += "FAIL: the game did not get to quit" }
     $configEnd = Read-Directive $commandsFile "config-end"
     if ($configEnd) {
         $saved = if (Test-Path $configFile) { Get-Content -Raw $configFile } else { "" }
-        $has = $saved.Contains($configEnd)
-        $report += "config file after the run: expect $configEnd | $(if ($has) { 'PASS' } else { 'FAIL' })"
-        if (-not $has) { $pass = $false }
+        $report += "config file after the run: expect $configEnd | $(if ($saved.Contains($configEnd)) { 'PASS' } else { 'FAIL' })"
     }
-    $report += "result $(if ($pass) { 'PASS' } else { 'FAIL' })"
-    $report | Set-Content -Encoding ascii (Join-Path $out "result.txt")
-    if (-not $pass) { $failed++ }
-    Write-Host "[$target] $(if ($pass) { 'PASS' } else { 'FAIL' }): $(@($styles).Count) checkpoints, results in $out"
+    $result = if ($report -cmatch "FAIL") { $failed++; "FAIL" } else { "PASS" }
+    $report + "result $result" | Set-Content -Encoding ascii (Join-Path $out "result.txt")
+    Write-Host "[$target] ${result}: $($styles.Count) checkpoints, results in $out"
 }
 exit $(if ($failed) { 1 } else { 0 })

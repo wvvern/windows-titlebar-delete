@@ -42,7 +42,7 @@ public final class Harness {
     /** @return the harness, or null when the system property is not set */
     public static Harness fromSystemProperty(Platform platform) {
         String path = System.getProperty("wtd.harness");
-        if (path == null || path.trim().isEmpty()) return null;
+        if (path == null) return null;
         File dir = new File(path).getAbsoluteFile();
         platform.info("Test harness enabled in " + dir);
         return new Harness(dir, platform.harnessHost());

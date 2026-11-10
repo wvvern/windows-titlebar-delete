@@ -22,7 +22,7 @@ Windows Titlebar Delete uses ports and adapters. The core has all of the logic a
 | Module | Contents |
 |--------|----------|
 | `core/` | Plain Java 8, no Minecraft, loader, Mixin or LWJGL types. It compiles into every jar. It has unit tests and Checkstyle. |
-| `modern/` | 18 Minecraft versions from 1.16.5 to 26.3 with Mojang names. `common/` has the adapter and the mixins. `fabric/`, `forge/` and `neoforge/` have only the entry point. |
+| `modern/` | Minecraft 1.16.5 to 26.3 with Mojang names. `common/` has the adapter and the mixins. `fabric/`, `forge/` and `neoforge/` have only the entry point. |
 | `legacy/` | Forge 1.8.9 and 1.12.2 with MCP names. `src/main` is the adapter, and it is the same source for the two versions. |
 
 One tool chain cannot build both 1.8.9 Forge and 26.x, so there are two builds. Both compile `core/src`.
@@ -31,7 +31,7 @@ One tool chain cannot build both 1.8.9 Forge and 26.x, so there are two builds. 
 
 - `Styles.hidden(style, keepBorder)` and `Styles.shown(style)` are pure functions. They give the style bits of a window without and with its titlebar. They change only `WS_CAPTION`, `WS_SYSMENU`, `WS_MINIMIZEBOX`, `WS_MAXIMIZEBOX` and `WS_THICKFRAME`. They always keep `WS_MAXIMIZEBOX`, so Win+Up maximizes a window that has the resize border.
 - Popup rule: a window with `WS_POPUP` keeps its style. The two functions give the same style back. Such a window is in fullscreen, or a different mod made it borderless.
-- `Titlebar` is the only entry point for the adapters: `init`, `tick` and `toggle`.
+- `Titlebar` is the only entry point for the adapters: `init`, `tick` and `toggle`. Its public methods are `synchronized`, because Forge and NeoForge call `init` on a loader thread.
 - `config/` has the immutable `Config` and `ConfigCodec`. The file is `windowstitlebardelete.json` in the config folder that `Platform.configDir` gives. `ConfigCodec.decode` finds each of the two keys in the text of the file with one pattern and does not examine the other text. A key that is not in the text keeps its default. A key with a value that is not `true` or `false` gives one warning and the defaults of the two keys.
 - The config has two values. `hidden` (default `true`) is the state of the titlebar. `keepResizeBorder` (default `true`) keeps the thin resize border while the titlebar is hidden. Only the file can change `keepResizeBorder`.
 - `Titlebar.init` loads the config before a tick can run. It does not look at the file again, so a change to the file has an effect at the next start.
@@ -52,7 +52,7 @@ The config value `hidden` is the only state. `Titlebar` has no other flag.
 - `JnaWindow` keeps the handle and searches again only when `IsWindow` is false.
 - `JnaWindow.setStyle` calls `SetWindowLongW` and then `SetWindowPos` with `SWP_FRAMECHANGED`, `SWP_NOMOVE` and `SWP_NOSIZE`. The outer size and the position of the window stay the same.
 - JNA version rule: each game version has its own JNA, from 3.4.0 on 1.8.9 to 5.x. The core uses only the API that is the same in all of them: direct mapping with `Native.register`, `Pointer` and callbacks. It does not use jna-platform. The core compiles against JNA and does not put it in the jar.
-- All native calls are on the client thread, from `Titlebar.tick`, `Titlebar.toggle` and the code that they call.
+- All native calls that use the window are on the client thread, from `Titlebar.tick`, `Titlebar.toggle` and the code that they call.
 - On an operating system that is not Windows, `init` logs one line and uses `NativeWindow.NONE`. A native failure logs one warning and also changes to `NativeWindow.NONE`.
 
 ## Ports
@@ -68,9 +68,9 @@ A mixin handler or a loader event has no logic. It calls `Titlebar`, directly or
 
 | Point | Modern | Legacy |
 |-------|--------|--------|
-| Start | The entry point of the loader calls `ModernHooks.bootstrap(loader, configDir)`, which calls `Titlebar.init` | `FMLInitializationEvent` |
-| Tick | `MinecraftMixin` at the head of `Minecraft.tick` | `TickEvent.ClientTickEvent`, phase `END` |
-| Key binding | `OptionsMixin` at the head of `Options.load()` adds the key to `keyMappings` | `ClientRegistry.registerKeyBinding` |
+| Start | The entry point of the loader calls `ModernHooks.bootstrap` | `FMLInitializationEvent` |
+| Tick | `mixin/MinecraftMixin`: `@Inject` at the head of `Minecraft.tick`, which calls `ModernHooks.tick()` on the client thread, also when no world is open | `TickEvent.ClientTickEvent`, phase `END` |
+| Key binding | `mixin/OptionsMixin`: `@Inject` at the head of `Options.load()`, which replaces `keyMappings` with `ModernHooks.withKey(keyMappings)` before the game reads `options.txt`, so the game loads, saves and shows the key in Controls | `ClientRegistry.registerKeyBinding` |
 | Key press | The tick hook reads the clicks of the key and calls `Titlebar.toggle` | The same, in the tick event |
 
 - Modern uses two mixins and no loader events, so the same code runs on all loaders and Fabric does not need Fabric API.
@@ -86,8 +86,8 @@ A mixin handler or a loader event has no logic. It calls `Titlebar`, directly or
 | `ModernHooks` | `bootstrap(loader, configDir)` starts the core with a `ModernPlatform`. `tick()` calls `Titlebar.toggle` for each click of the key, then `Titlebar.tick`. `withKey(keys)` gives the key array of the game with the toggle key, which it adds only one time. `key()` makes the key at its first use. |
 | `ModernPlatform` | The `Platform` port. The name for logs is the loader and the Minecraft version, which the Stonecutter swap `/*$ minecraft*/` writes. The config folder is the folder that the loader entry point gave. |
 | `ModernHarnessHost` | The `Harness.Host` port: fullscreen, stop the game. |
-| `mixin/OptionsMixin` | `@Inject` at the head of `Options.load()`. It replaces `keyMappings` with `ModernHooks.withKey(keyMappings)` before the game reads `options.txt`, so the game loads, saves and shows the key in Controls. |
-| `mixin/MinecraftMixin` | `@Inject` at the head of `Minecraft.tick`. It calls `ModernHooks.tick()` on the client thread, also when no world is open. |
+
+The Hooks table gives the two mixins.
 
 Each loader folder has only the entry point:
 
@@ -97,9 +97,9 @@ Each loader folder has only the entry point:
 | Forge | The constructor of `TitlebarForge`, only when `FMLEnvironment.dist` is `Dist.CLIENT` |
 | NeoForge | The constructor of `TitlebarNeoForge`. On 1.20.4 it starts the mod only when `FMLEnvironment.dist` is `Dist.CLIENT`. From 1.20.5, `@Mod(dist = Dist.CLIENT)` does this. |
 
-- Each entry point gives the config folder of its loader to `ModernHooks.bootstrap(loader, configDir)`. The adapter does not calculate the folder from the game folder, because Forge and NeoForge can start the mod before the game object has its folder.
+- Each entry point gives the config folder of its loader. The adapter does not calculate the folder from the game folder, because Forge and NeoForge can start the mod before the game object has its folder.
 - The mixin config is `windowstitlebardelete.mixins.json`. Fabric gets it from `fabric.mod.json`, Forge from `loom.forge.mixinConfig`, and NeoForge from `[[mixins]]` in the mods file.
-- Client only: `fabric.mod.json` has `"environment": "client"`. A dedicated Forge or NeoForge server loads the mod, and the mod does nothing. Forge 1.16.5 to 1.20.4 and NeoForge 1.20.4 set a display test, so the server list does not show the mod as a mod that the server does not have. Forge 1.16.5 to 1.18.2 register it in `TitlebarForge`. Later versions read the `displayTest` key of the mods file.
+- Client only: `fabric.mod.json` has `"environment": "client"`. A dedicated Forge or NeoForge server loads the mod, and the mod does nothing. Forge 1.16.5 to 1.20.4 and NeoForge 1.20.4 set a display test, so the server list does not show the mod as a mod that the server does not have. Forge 1.16.5 to 1.18.2 register it in `TitlebarForge`. Later versions read the `displayTest` key of the mods file. The NeoForge mods file has the key for all versions, and only NeoForge 1.20.4 reads it.
 - `fabric.mod.json` asks for a low minimum Fabric Loader version, not for the Fabric Loader version of the build (`fabric_loader_version`).
 - The metadata of each jar has the Minecraft range of its node (`minecraft_range_fabric`, `minecraft_range_forge`, `minecraft_range_neoforge`).
 
@@ -116,7 +116,7 @@ These are all `//? if` conditions in `modern/`. `>=X` is the first version that 
 | `>=1.21.9` | `ModernHooks` | `KeyMapping.Category.MISC` replaces the category text `key.categories.misc` |
 | `>=26.3` | `ModernPlatform`, `ModernHarnessHost` | `options.fullscreen()` replaces `Window.isFullscreen()` and `Window.toggleFullScreen()` |
 
-The build scripts have two more boundaries, with `stonecutter.eval`: `>=26.1` in `gradle/shared.gradle` (the game has no obfuscation, so the build uses `loom-no-remap`) and `>=1.20.5` in `neoforge/build.gradle` (`META-INF/neoforge.mods.toml` replaces `META-INF/mods.toml` and `pack.mcmeta`).
+The build scripts have two more boundaries, with `stonecutter.eval`: `>=26.1` in `gradle/shared.gradle` (the game has no obfuscation, so the build uses `loom-no-remap`) and `>=1.20.5` in `neoforge/build.gradle` (the jar has `META-INF/neoforge.mods.toml` and no `pack.mcmeta`, and before this boundary the build gives the same file the name `mods.toml`).
 
 ## Legacy adapter
 
@@ -126,9 +126,9 @@ The build scripts have two more boundaries, with `stonecutter.eval`: `>=26.1` in
 |-------|----------|
 | `TitlebarForge` | The `@Mod` class, with `clientSideOnly = true`. `FMLInitializationEvent` calls `Titlebar.init`, registers the key and registers the class on the FML bus. The client tick event, phase `END`, calls `Titlebar.toggle` for each press of the key, then `Titlebar.tick`. |
 | `LegacyPlatform` | The `Platform` port. The config folder is `Loader.instance().getConfigDir()`. |
-| `LegacyHarnessHost` | The `Harness.Host` port. |
+| `LegacyHarnessHost` | The `Harness.Host` port. `setFullscreen` throws an exception, so a `fullscreen` command fails the harness run. |
 
-The build writes the class `BuildInfo` for each version, and the `@Mod` annotation uses it. `BuildInfo.VERSION` is `modVersion`. `BuildInfo.MINECRAFT_RANGE` is the accepted Minecraft version, `[1.8.9]` or `[1.12.2]`.
+The build writes the class `BuildInfo` for each version, and the `@Mod` annotation uses it. `BuildInfo.VERSION` is the version of the mod. `BuildInfo.MINECRAFT_RANGE` is the accepted Minecraft version, `[1.8.9]` or `[1.12.2]`.
 
 ## Build
 
@@ -138,17 +138,17 @@ The build writes the class `BuildInfo` for each version, and the `@Mod` annotati
 | `legacy/` | Essential Loom 0.10, Gradle 8.8 | Gradle runs on JDK 21. The game compiles and runs on Java 8. |
 
 ```bash
-cd modern && ./gradlew collectJars                  # 37 jars -> modern/build/libs/
-cd modern && ./gradlew :fabric:1.21.11:releaseJar   # one jar -> modern/fabric/versions/1.21.11/build/libs/
-cd legacy && ./gradlew build                        # 2 jars -> legacy/versions/<mc>/build/libs/
+cd modern && ./gradlew --configure-on-demand :fabric:1.21.11:releaseJar :neoforge:1.21.11:releaseJar
+cd legacy && ./gradlew build
 ```
 
-- The 37 modern jars are 18 Fabric, 7 Forge and 12 NeoForge. With the 2 legacy jars, a release has 39 jars.
+- Build the jars of one node in each Gradle run of `modern/`, with `--configure-on-demand`. With all projects configured, Architectury Loom can give one node the mappings of a different node.
+- [RELEASING.md](RELEASING.md) gives the path of each jar.
 - If a JDK is missing, Gradle downloads it.
 - A node is a folder in `modern/versions`. Its `gradle.properties` has the Minecraft version, the Java version, the loader versions and the version ranges for the mod metadata. The node `26.1` builds for Minecraft 26.1.2.
 - `modern/settings.gradle` lists the nodes of each loader: Fabric on all, Forge on 1.16.5 to 1.20.4, NeoForge on 1.20.4 to 26.3.
 - Stonecutter comments (`//? if >=1.20.5 {` ... `//?} else {` ... `//?}`) mark the version differences. They are only in `modern/`, never in the core.
-- The version of the mod is in two places: `mod_version` in `modern/gradle.properties` and `modVersion` in `legacy/gradle.properties`.
+- The version of the mod is `mod_version` in `modern/gradle.properties`. The legacy build reads the same value.
 - Dev client: `./gradlew :fabric:26.3:runClient` in `modern/`, `./gradlew :1.8.9:runClientDev` in `legacy/`. Do not start it on the visible desktop. Use the harness.
 - Releases: see [RELEASING.md](RELEASING.md).
 
@@ -158,7 +158,7 @@ cd legacy && ./gradlew build                        # 2 jars -> legacy/versions/
 2. Add `<v>` to the `versions` list in `modern/settings.gradle` and to the list of each loader branch that has it.
 3. Run `./gradlew --configure-on-demand :fabric:<v>:releaseJar` in `modern/`, and the same for the other loaders. The compile errors show the names that changed. Fix each one with a `//? if` branch, and add the boundary to the table above.
 4. Run `tools/harness.ps1` for each new target, one time with each commands file. It must print `PASS`.
-5. Add a line to the matrix in `.github/workflows/ci.yml` and to the table in `README.md`.
+5. Add a line to the matrix in `.github/workflows/ci.yml` and to the table in `README.md`, and change the Jars table in [RELEASING.md](RELEASING.md).
 
 For a legacy version, add `legacy/versions/<mc>/gradle.properties` and the version in `legacy/settings.gradle.kts`.
 
@@ -170,14 +170,13 @@ For a legacy version, add `legacy/versions/<mc>/gradle.properties` and the versi
 ## Harness
 
 - `tools/harness.ps1` starts the dev client of each target on the hidden desktop `WtdHarness` (`tools/run-hidden.ps1`), with no sound. Do not start a visible game for tests.
-- A target is `<loader>-<node>`, for example `fabric-1.21.11` or `forge-1.8.9`. There are 39 targets, one for each jar.
+- A target is `<loader>-<node>`, for example `fabric-1.21.11` or `forge-1.8.9`. Each jar has one target.
 - The script starts the Gradle run task with `-Pharness=<dir>`. The build then gives the game `-Dwtd.harness=<dir>`. For a `modern/` target, the script also gives Gradle `--configure-on-demand`.
-- The game runs `core/dev/Harness`, which exists only with `-Dwtd.harness=<dir>`. It reads `<dir>/commands.txt` one time, when `Titlebar.init` makes it. Its only state is the queue of commands and the counter of `wait`. The commands are `wait <ticks>`, `toggle`, `style`, `fullscreen <on|off>` and `quit`.
+- The game runs `core/dev/Harness`, which exists only with `-Dwtd.harness=<dir>`. It reads `<dir>/commands.txt` one time, when `Titlebar.init` makes it. Its only state is the queue of commands and the counter of `wait`.
 - `Titlebar.tick` calls the harness after the style check. Thus a `style` command logs the style that the window has after the mod examined it in the same tick.
-- `toggle` calls `Titlebar.toggle`, the same call that the key makes.
-- Each `style` command is a checkpoint with two proofs. Proof 1: the game logs the style that it reads through `JnaWindow`. Proof 2: the script reads the style of the same window from outside the game, with `EnumDesktopWindows` and `GetWindowLong`. The two values must be equal, and the style must agree with the `# expect` line before the command. An `# expect` line gives style bits (`caption off thickframe on`, `popup on`) or the full style (`style 0x16CF0000`). The commands file has `wait 40` after each `style`, so the window does not change while the script reads it.
-- The script, not the game, sets the config file of a run. With no `# config-start` line in the commands file, the script deletes the config file before the start. With a `# config-start <json>` line, the script writes that text as the config file. After the game stops, the config file must contain the text of the `# config-end` line.
-- A run passes when all checkpoints pass, the harness log has no line that starts with `!`, the game gets to `quit`, and the config file agrees with the `# config-end` line. The result is in `<OutDir>\<target>\result.txt`, with the logs.
+- The `toggle` command calls `Titlebar.toggle`, the same call that the key makes.
+- Each `style` command is a checkpoint with two proofs. Proof 1: the game logs the style that it reads through `JnaWindow`. Proof 2: the script reads the style of the same window from outside the game, with `EnumDesktopWindows` and `GetWindowLong`. The two values must be equal.
+- The header of `tools/harness.ps1` gives the rules for a commands file and for the result of a run.
 - Forge and NeoForge targets of `modern/` get `earlyWindowControl = false` in `config/fml.toml`, so that the game makes its own window as vanilla does.
 - The dev game of Forge 1.16.5 stops when it loads the models, because Architectury Loom keeps the SRG names of two calls in the Forge patches. Only with `-Pharness`, `modern/forge/build.gradle` adds `forge/dev-1.16.5` with `TransformationMixin`, which gives the game these two methods. No jar has this mixin.
 
@@ -189,7 +188,7 @@ Each target has two runs, one for each commands file:
 | `titlebar-legacy.txt` | No config file | 3: the same with no fullscreen step | `"hidden": true` |
 | `remember.txt` | `{"hidden": false, "keepResizeBorder": false}` | 2: the style `0x16CF0000` of a window that no program changed, then toggle to hidden with no resize border | `"hidden": true` |
 
-- Legacy targets use `titlebar-legacy.txt` in place of `titlebar.txt`. LWJGL 2 fullscreen can change the display mode of the real monitor, also from a hidden desktop.
+- Legacy targets use `titlebar-legacy.txt` in place of `titlebar.txt` (see Known gaps).
 - `remember.txt` shows what one run from a new install cannot show: the mod uses the saved `hidden` value at the start and does not change a window with a titlebar, the toggle saves the new value, and `keepResizeBorder` set to `false` removes the resize border.
 
 ```powershell
@@ -206,7 +205,7 @@ pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,fabric-1.21.11,neoforge-
 - The harness toggles through the core. No automated test presses F12.
 - The toggle key does nothing while a screen is open: the title screen, a menu, chat or an inventory. The game counts the clicks of a key binding only while no screen is open, and the mod reads only these clicks.
 - 32-bit Java uses the stdcall calling convention in `JnaWindow`, which is a different code path from 64-bit Java. No test runs it.
-- The harness skips fullscreen on 1.8.9 and 1.12.2, because LWJGL 2 changes the display mode of the real monitor.
+- The harness has no fullscreen step on 1.8.9 and 1.12.2, because LWJGL 2 fullscreen can change the display mode of the real monitor, also from a hidden desktop.
 - With the titlebar hidden in a window that is not maximized, each change to fullscreen and back can make the window taller by the height of the titlebar. The cause is that the mod keeps the outer size of the window when it removes the titlebar. This is not measured. The 1.0.0 mod did the same.
 - The harness runs the dev clients with `earlyWindowControl = false`. The early loading window of Forge and NeoForge in a normal install is the same game window, but no test uses it.
 - Quilt uses the Fabric jar and has no harness run.

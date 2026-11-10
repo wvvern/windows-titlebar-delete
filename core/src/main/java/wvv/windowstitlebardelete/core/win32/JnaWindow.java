@@ -19,11 +19,8 @@ public final class JnaWindow implements NativeWindow {
     private static final int SWP_NOMOVE = 0x0002;
     private static final int SWP_NOZORDER = 0x0004;
     private static final int SWP_FRAMECHANGED = 0x0020;
-    private static final int CLASS_NAME_LENGTH = 256;
 
     private final int pid = Kernel32.GetCurrentProcessId();
-    private final char[] className = new char[CLASS_NAME_LENGTH];
-    private final int[] windowPid = new int[1];
     /** The window that the last search found, or null. */
     private Pointer hwnd;
     /** The callback object stays in a field, so that the garbage collector does not free it while Windows can call it. */
@@ -57,10 +54,11 @@ public final class JnaWindow implements NativeWindow {
 
     /** True for a visible top-level window of this process with the window class of LWJGL 2, GLFW or SDL. */
     private boolean isGameWindow(Pointer candidate) {
+        int[] windowPid = new int[1];
         User32.GetWindowThreadProcessId(candidate, windowPid);
         if (windowPid[0] != pid || !User32.IsWindowVisible(candidate)) return false;
-        int length = User32.GetClassNameW(candidate, className, CLASS_NAME_LENGTH);
-        String name = new String(className, 0, Math.max(0, length));
+        char[] className = new char[256];
+        String name = new String(className, 0, User32.GetClassNameW(candidate, className, className.length));
         return name.equals("LWJGL") || name.equals("GLFW30") || name.startsWith("SDL");
     }
 

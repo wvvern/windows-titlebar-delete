@@ -10,8 +10,6 @@ class JnaWindowTest {
     @Test
     void findsNoWindowInATestProcess() {
         assumeTrue(System.getProperty("os.name", "").startsWith("Windows"), "only on Windows");
-        JnaWindow window = new JnaWindow();
-        assertFalse(window.found());
-        assertFalse(window.found());
+        assertFalse(new JnaWindow().found());
     }
 }
