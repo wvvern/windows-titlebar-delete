@@ -20,11 +20,13 @@ java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(8))
 }
 
-// Writes BuildInfo.java so that the @Mod version comes from modVersion only.
+// Writes BuildInfo.java so that the @Mod annotation gets the mod version and the Minecraft version from the build.
 val generateBuildInfo = tasks.register("generateBuildInfo") {
     val outputDir = layout.buildDirectory.dir("generated/buildinfo")
     val version = modVersion
+    val minecraft = mcVersion
     inputs.property("modVersion", version)
+    inputs.property("mcVersion", minecraft)
     outputs.dir(outputDir)
     doLast {
         val file = outputDir.get().file("wvv/windowstitlebardelete/legacy/BuildInfo.java").asFile
@@ -36,6 +38,7 @@ val generateBuildInfo = tasks.register("generateBuildInfo") {
             |/** Values that the build writes into the code. */
             |final class BuildInfo {
             |    static final String VERSION = "$version";
+            |    static final String MINECRAFT_RANGE = "[$minecraft]";
             |
             |    private BuildInfo() {
             |    }
@@ -48,7 +51,6 @@ val generateBuildInfo = tasks.register("generateBuildInfo") {
 sourceSets.main {
     java.srcDir(generateBuildInfo)
     java.srcDir(rootProject.file("src/main/java"))
-    java.srcDir(rootProject.file("src/v${mcVersion.replace('.', '_')}/java"))
     java.srcDir(rootProject.file("../core/src/main/java"))
     resources.srcDir(rootProject.file("src/main/resources"))
     resources.srcDir(rootProject.file("../core/src/main/resources"))

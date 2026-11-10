@@ -11,10 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
-/**
- * The one entry point of the core for the adapters, which keeps the style of the game window in step with the config
- * and the toggle key on each client tick.
- */
+/** The one entry point of the core for the adapters, which hides the titlebar of the game window while the config says so. */
 public final class Titlebar {
     public static final String MOD_ID = "windowstitlebardelete";
     public static final String MOD_NAME = "Windows Titlebar Delete";
@@ -25,8 +22,6 @@ public final class Titlebar {
     private static Platform platform;
     private static File configFile;
     private static volatile Config config = Config.DEFAULTS;
-    /** True while the titlebar must be hidden, which the toggle key changes and the config file does not store. */
-    private static volatile boolean hidden;
     private static NativeWindow window = NativeWindow.NONE;
     private static Harness harness;
 
@@ -37,12 +32,11 @@ public final class Titlebar {
         init(p, window(p, System.getProperty("os.name", "")));
     }
 
-    /** Starts the core with a given window, which tests and adapters that know the window handle use. */
+    /** Starts the core with a given window, which loads the config before a tick can change the window. */
     public static synchronized void init(Platform p, NativeWindow w) {
         platform = p;
         configFile = new File(p.configDir(), CONFIG_FILE);
         config = load();
-        hidden = config.hideOnStartup();
         window = w;
         harness = Harness.fromSystemProperty(p);
     }
@@ -61,15 +55,30 @@ public final class Titlebar {
         }
     }
 
-    /** Runs the harness commands, then sets the window style that the config and the toggle key want; call it on the client thread. */
+    /** Runs the harness commands, then hides the titlebar again if the game put it back; call it on the client thread. */
     public static synchronized void tick() {
         if (platform == null) return;
         if (harness != null) harness.tick();
+        // The game gives no signal when it leaves fullscreen or makes a new window, so each tick reads the style while the titlebar is hidden.
+        if (config.hidden()) writeStyle();
+    }
+
+    /** Shows or hides the titlebar and saves that state for the next start; call it on the client thread. */
+    public static synchronized void toggle() {
+        if (platform == null) return;
+        config = config.withHidden(!config.hidden());
+        save(config);
+        // Only this call writes the style with a titlebar, so the mod does not touch the window while the titlebar shows.
+        writeStyle();
+    }
+
+    /** Writes the style that the config wants when the game is not in fullscreen and the window is found and has a different style. */
+    private static void writeStyle() {
         if (platform.isFullscreen()) return;
         try {
             if (!window.found()) return;
             int style = window.style();
-            int wanted = Styles.wanted(style, hidden, config.keepResizeBorder());
+            int wanted = config.hidden() ? Styles.hidden(style, config.keepResizeBorder()) : Styles.shown(style);
             if (wanted != style) window.setStyle(wanted);
         } catch (Throwable e) {
             nativeFailed(platform, e);
@@ -92,26 +101,8 @@ public final class Titlebar {
         p.warn(MOD_NAME + " cannot change the game window on " + p.describe() + ". The titlebar stays as it is.", e);
     }
 
-    /** Shows or hides the titlebar for this session at the next tick, which does not change the config file. */
-    public static void toggle() {
-        hidden = !hidden;
-    }
-
-    /** True while the titlebar is hidden or is about to be hidden at the next tick. */
-    public static boolean hidden() { return hidden; }
-
-    public static Config config() { return config; }
-
-    /** Saves a config to the file, which takes effect at the next tick and does not change {@link #hidden}. */
-    public static synchronized void apply(Config next) {
-        config = next;
-        if (configFile != null) save(next);
-    }
-
-    /** Shows the settings screen of the adapter. */
-    public static void openSettings() {
-        if (platform != null) platform.openSettings();
-    }
+    /** True while the mod keeps the titlebar hidden. */
+    public static boolean hidden() { return config.hidden(); }
 
     private static Config load() {
         if (!configFile.isFile()) {
@@ -121,7 +112,7 @@ public final class Titlebar {
         try {
             return ConfigCodec.decode(new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8));
         } catch (IOException | RuntimeException e) {
-            platform.warn("The config file " + configFile + " is not valid. The mod uses the default settings.", e);
+            platform.warn("The config file " + configFile + " is not valid. The mod uses the default values.", e);
             return Config.DEFAULTS;
         }
     }

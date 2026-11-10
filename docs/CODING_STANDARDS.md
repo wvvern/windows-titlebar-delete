@@ -30,13 +30,13 @@ Checkstyle examines `core/src/main` and `core/src/test` only. It does not examin
 8. The name of each mixin handler starts with `wtd$`. `@Shadow` and `@Accessor` members keep the target name. `[lint]`
 9. A mixin handler or a loader event has no logic. It calls `Titlebar`, and the core makes the decision. `[review]`
 10. Config types are immutable. A `with*` method gives a new object. `[review]`
-11. Do not use a state machine or edge detection for the window. Each tick, `Titlebar` calculates the wanted style from the config and writes it when it is different. `[review]`
+11. Do not use a state machine or edge detection for the window. While the titlebar is hidden, `Titlebar.tick` reads the style each tick and writes the hidden style only when it is different. While the titlebar shows, only `Titlebar.toggle` writes a style. `[review]`
 
 ## Text and files
 
 12. Tracked text files contain only ASCII characters. `[lint]` `[cs] asciiOnly`
 13. Use spaces, not tabs. Do not put spaces at the end of a line. Each file ends with a newline. `[lint]` `[cs]`
-14. Write all text that users read in ASD-STE100 Simplified Technical English: messages, screen labels, README and docs. `[review]`
+14. Write all text that users read in ASD-STE100 Simplified Technical English: messages, the name of the key, README and docs. `[review]`
 
 ## Java (core)
 

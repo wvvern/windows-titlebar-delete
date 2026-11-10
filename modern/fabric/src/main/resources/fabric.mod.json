@@ -13,8 +13,7 @@
   "icon": "assets/windowstitlebardelete/icon.png",
   "environment": "client",
   "entrypoints": {
-    "client": ["wvv.windowstitlebardelete.fabric.TitlebarFabric"],
-    "modmenu": ["wvv.windowstitlebardelete.fabric.ModMenuIntegration"]
+    "client": ["wvv.windowstitlebardelete.fabric.TitlebarFabric"]
   },
   "mixins": ["windowstitlebardelete.mixins.json"],
   "depends": {

@@ -19,9 +19,6 @@ public interface Platform {
     /** True while the game shows its window in fullscreen, where the mod does not change the window. */
     boolean isFullscreen();
 
-    /** Shows the settings screen, a version screen that wraps {@link wvv.windowstitlebardelete.core.ui.SettingsEditor}. */
-    void openSettings();
-
     /** The development test harness host, which the core uses only when {@code -Dwtd.harness=<dir>} is set. */
     Harness.Host harnessHost();
 }

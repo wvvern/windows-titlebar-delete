@@ -28,7 +28,7 @@ Each line is a Conventional Commit title.
 - **Types, in this order:** `feat`, `fix`, `perf`, `compat`, `config`. Use `config` for a change that makes players edit their config or their options. Put `!` after the type for a breaking change, for example `config!`.
 - **One colon only.** The colon after the type is the only colon in the line. Do not use semicolons, dashes as pauses, or parentheses for side notes. If a line needs two clauses, write two lines or a simpler sentence.
 - **ASD-STE100.** Start with an approved verb in the imperative (Add, Change, Show, Hide, Keep, Remove, Stop). Use one word for one meaning, for example always "titlebar". Use the active voice. Keep each line to 20 words or fewer. Use no period at the end.
-- **Human.** Write for a player, not a developer. Name what the player sees or does: the key, the screen, the option, the window. Say "you" when it reads better. Do not use class names, method names, ticket numbers or internal terms such as "window style", "mixin" or "adapter".
+- **Human.** Write for a player, not a developer. Name what the player sees or does: the key, the Controls screen, the config file, the window. Say "you" when it reads better. Do not use class names, method names, ticket numbers or internal terms such as "window style", "mixin" or "adapter".
 - **Specific.** Say what changed and where. "Keep the titlebar hidden after fullscreen on 1.8.9" is good. "Fix several bugs" and "Improve compatibility" are not.
 - **Plain.** ASCII only. Do not use marketing words (powerful, seamless, blazing, robust), emoji or exclamation marks.
 - **Optional intro.** One short sentence under the heading is permitted, for example "First release." Do not add more prose.
@@ -39,7 +39,7 @@ Each line is a Conventional Commit title.
 ```
 ## 2.1.0
 
-- feat: Add the option Hide the titlebar only when the window is maximized
+- feat: Add "onlyWhenMaximized" to the config file, which hides the titlebar only in a maximized window
 - fix: Keep the titlebar hidden after you leave fullscreen on Forge 1.12.2
 - compat: Add jars for Minecraft 26.4
 - config!: Rename the key "keepResizeBorder" to "resizeBorder" in the config file
@@ -52,7 +52,7 @@ Bad lines and their fixes.
 | `feat: Add a toggle key; default F12` | `feat: Add the key Toggle the titlebar to the Controls screen, with F12 as the default` |
 | `fix: Fixed a bug where JnaWindow matched by title` | `fix: Change only the game window, and not a window of a different program` |
 | `compat: Seamless support for all loaders!` | `compat: Add jars for Quilt on Minecraft 1.18.2 and later` |
-| `feat: Settings: startup and border` | `feat: Add a settings screen with the options Hide the titlebar at startup and Keep the resize border` |
+| `feat: Config: remember the titlebar` | `feat: Keep the titlebar hidden or shown as you left it when you start the game again` |
 
 ## Before you finish
 

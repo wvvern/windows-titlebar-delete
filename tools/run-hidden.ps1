@@ -10,6 +10,8 @@ take focus or show in the taskbar. Prints the process id of the cmd.exe that run
 param(
     [Parameter(Mandatory = $true)][string]$Dir,
     [string]$Task,
+    # More options for Gradle, for example --configure-on-demand.
+    [string]$Options,
     [string]$Harness,
     [string]$CommandLine,
     [string]$Log = "$env:TEMP\wtd-hidden.log"
@@ -44,7 +46,7 @@ $Dir = (Resolve-Path $Dir).Path
 if (-not $CommandLine) {
     $gradlew = Join-Path $Dir "gradlew.bat"
     # --no-daemon: a daemon from the visible desktop starts the game window on that desktop.
-    $CommandLine = "`"$gradlew`" --no-daemon $Task `"-Pharness=$Harness`""
+    $CommandLine = "`"$gradlew`" --no-daemon $Options $Task `"-Pharness=$Harness`""
 }
 $commandLine = "cmd.exe /s /c `"$CommandLine > `"$Log`" 2>&1`""
 

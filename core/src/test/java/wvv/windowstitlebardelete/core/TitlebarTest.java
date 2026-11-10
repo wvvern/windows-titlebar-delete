@@ -18,7 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TitlebarTest {
-    private static final int HIDDEN = Styles.wanted(FakeWindow.NORMAL, true, true);
+    private static final int HIDDEN = Styles.hidden(FakeWindow.NORMAL, true);
+    private static final Config SHOWN = Config.DEFAULTS.withHidden(false);
 
     @TempDir
     File dir;
@@ -32,76 +33,89 @@ class TitlebarTest {
         Titlebar.init(platform, window);
     }
 
+    private void startWith(String config) throws IOException {
+        Files.write(configFile().toPath(), config.getBytes(StandardCharsets.UTF_8));
+        start();
+    }
+
     private File configFile() {
         return new File(dir, Titlebar.CONFIG_FILE);
     }
 
-    private String read(File f) throws IOException {
-        return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+    private String saved() throws IOException {
+        return new String(Files.readAllBytes(configFile().toPath()), StandardCharsets.UTF_8);
     }
 
     @Test
-    void missingConfigWritesDefaults() throws IOException {
+    void newInstallWritesDefaultsAndHides() throws IOException {
         start();
-        assertEquals(Config.DEFAULTS, Titlebar.config());
-        assertEquals(ConfigCodec.encode(Config.DEFAULTS), read(configFile()));
+        assertTrue(Titlebar.hidden());
+        assertEquals(ConfigCodec.encode(Config.DEFAULTS), saved());
         assertTrue(platform.warnings.isEmpty());
         assertTrue(platform.infos.isEmpty());
+        Titlebar.tick();
+        assertEquals(HIDDEN, window.style);
     }
 
     @Test
     void brokenConfigWarnsOnceAndUsesDefaults() throws IOException {
-        Files.write(configFile().toPath(), "{ broken".getBytes(StandardCharsets.UTF_8));
-        start();
-        assertEquals(Config.DEFAULTS, Titlebar.config());
-        assertEquals(1, platform.warnings.size());
-        assertEquals("{ broken", read(configFile()));
-    }
-
-    @Test
-    void hidesAtStartupAndWritesOnlyWhenDifferent() {
-        start();
+        startWith("{ broken");
         assertTrue(Titlebar.hidden());
+        assertEquals(1, platform.warnings.size());
+        assertEquals("{ broken", saved());
+    }
+
+    @Test
+    void writesOnlyWhenTheStyleIsDifferent() {
+        start();
         Titlebar.tick();
-        assertEquals(HIDDEN, window.style);
-        assertEquals(1, window.writes);
         Titlebar.tick();
         Titlebar.tick();
         assertEquals(1, window.writes);
     }
 
     @Test
-    void staysShownWhenTheConfigSaysSo() throws IOException {
-        Files.write(configFile().toPath(), "{\"hideOnStartup\": false}".getBytes(StandardCharsets.UTF_8));
-        start();
+    void neverWritesWhenTheSavedStateIsShown() throws IOException {
+        startWith(ConfigCodec.encode(SHOWN));
         assertFalse(Titlebar.hidden());
         Titlebar.tick();
-        assertEquals(FakeWindow.NORMAL, window.style);
+        window.style = HIDDEN;
+        Titlebar.tick();
+        assertEquals(HIDDEN, window.style);
         assertEquals(0, window.writes);
     }
 
     @Test
-    void toggleShowsAndHidesWithoutSaving() throws IOException {
+    void toggleToShownRestoresOneTimeAndThenLeavesTheWindow() {
         start();
         Titlebar.tick();
         Titlebar.toggle();
-        Titlebar.tick();
         assertEquals(FakeWindow.NORMAL, window.style);
-        Titlebar.toggle();
+        assertEquals(2, window.writes);
+        window.style = HIDDEN;
         Titlebar.tick();
         assertEquals(HIDDEN, window.style);
-        assertEquals(ConfigCodec.encode(Config.DEFAULTS), read(configFile()));
+        assertEquals(2, window.writes);
     }
 
     @Test
-    void skipsFullscreenAndRepairsAfterwards() {
+    void toggleSavesTheStateAtOnce() throws IOException {
         start();
-        platform.fullscreen = true;
-        Titlebar.tick();
-        assertEquals(0, window.writes);
-        platform.fullscreen = false;
+        Titlebar.toggle();
+        assertEquals(ConfigCodec.encode(SHOWN), saved());
+        Titlebar.toggle();
+        assertEquals(ConfigCodec.encode(Config.DEFAULTS), saved());
         Titlebar.tick();
         assertEquals(HIDDEN, window.style);
+    }
+
+    @Test
+    void toggleKeepsTheResizeBorderValueOfTheFile() throws IOException {
+        Config noBorder = SHOWN.withKeepResizeBorder(false);
+        startWith(ConfigCodec.encode(noBorder));
+        Titlebar.toggle();
+        assertEquals(Styles.hidden(FakeWindow.NORMAL, false), window.style);
+        assertEquals(ConfigCodec.encode(noBorder.withHidden(true)), saved());
     }
 
     @Test
@@ -115,10 +129,36 @@ class TitlebarTest {
     }
 
     @Test
+    void skipsFullscreenAndRepairsAfterwards() {
+        start();
+        platform.fullscreen = true;
+        Titlebar.tick();
+        Titlebar.toggle();
+        Titlebar.toggle();
+        assertEquals(0, window.writes);
+        platform.fullscreen = false;
+        Titlebar.tick();
+        assertEquals(HIDDEN, window.style);
+    }
+
+    @Test
+    void popupWindowKeepsItsStyle() {
+        start();
+        window.style = Styles.WS_POPUP | FakeWindow.NORMAL;
+        Titlebar.tick();
+        Titlebar.toggle();
+        Titlebar.toggle();
+        Titlebar.tick();
+        assertEquals(0, window.writes);
+    }
+
+    @Test
     void waitsForTheWindow() {
         start();
         window.exists = false;
         Titlebar.tick();
+        Titlebar.toggle();
+        Titlebar.toggle();
         assertEquals(0, window.writes);
         assertNull(Titlebar.windowStyle());
         window.exists = true;
@@ -127,23 +167,12 @@ class TitlebarTest {
     }
 
     @Test
-    void applySavesAndTakesEffectWithoutChangingHidden() throws IOException {
-        start();
-        Titlebar.tick();
-        Config next = new Config(false, false);
-        Titlebar.apply(next);
-        assertTrue(Titlebar.hidden());
-        assertEquals(ConfigCodec.encode(next), read(configFile()));
-        Titlebar.tick();
-        assertEquals(Styles.wanted(FakeWindow.NORMAL, true, false), window.style);
-    }
-
-    @Test
     void nativeFailureWarnsOnceAndStops() {
         start();
         window.failure = new UnsatisfiedLinkError("test");
         Titlebar.tick();
         Titlebar.tick();
+        Titlebar.toggle();
         assertNull(Titlebar.windowStyle());
         assertEquals(1, platform.warnings.size());
     }

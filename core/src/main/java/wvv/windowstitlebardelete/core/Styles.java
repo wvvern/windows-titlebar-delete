@@ -1,6 +1,6 @@
 package wvv.windowstitlebardelete.core;
 
-/** The Win32 window style bits that the mod changes, and the style that a window must have. */
+/** The Win32 window style bits that the mod changes, and the styles of a window with and without its titlebar. */
 public final class Styles {
     public static final int WS_POPUP = 0x80000000;
     public static final int WS_CAPTION = 0x00C00000;
@@ -11,21 +11,27 @@ public final class Styles {
 
     /** The bits that a hidden titlebar removes, where the maximize box stays so that Win+Up still works. */
     private static final int TITLEBAR = WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-    private static final int SHOWN = TITLEBAR | WS_MAXIMIZEBOX | WS_THICKFRAME;
 
     private Styles() {}
 
     /**
-     * The style that the window must have, which changes only the titlebar and border bits and gives the same result
-     * when it gets its own result.
+     * The style of the window without its titlebar, which is the same style for a popup window.
      *
-     * @param keepBorder true to keep the resize border while the titlebar is hidden
+     * @param keepBorder true to keep the resize border
      */
-    public static int wanted(int style, boolean hidden, boolean keepBorder) {
-        // A popup window is fullscreen or borderless on purpose, so its style stays.
-        if ((style & WS_POPUP) != 0) return style;
-        if (!hidden) return style | SHOWN;
+    public static int hidden(int style, boolean keepBorder) {
+        if (isPopup(style)) return style;
         int bare = (style & ~TITLEBAR) | WS_MAXIMIZEBOX;
         return keepBorder ? bare | WS_THICKFRAME : bare & ~WS_THICKFRAME;
+    }
+
+    /** The style of the window with its titlebar and its resize border, which is the same style for a popup window. */
+    public static int shown(int style) {
+        return isPopup(style) ? style : style | TITLEBAR | WS_MAXIMIZEBOX | WS_THICKFRAME;
+    }
+
+    /** True for a window that is in fullscreen or borderless on purpose, so its style stays. */
+    private static boolean isPopup(int style) {
+        return (style & WS_POPUP) != 0;
     }
 }

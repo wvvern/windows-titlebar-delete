@@ -9,12 +9,15 @@ For a Forge 1.8.9 or 1.12.2 target, the script uses <name>-legacy.txt in place o
 Each "style" line that the game writes to log.txt is a checkpoint. At once, the script reads the style of the game
 window with GetWindowLong from this process. The in-game style and the outside style must be equal, and the bits must
 agree with the "# expect" line before the "style" command.
-The log, the screenshots and result.txt go to <OutDir>\<target>\. The exit code is 1 when a target fails.
+The game starts with no config file, or with the config file of the "# config-start" line of the commands file. After
+the game stops, the config file must have the text of the "# config-end" line.
+The logs and result.txt go to <OutDir>\<target>\. The exit code is 1 when a target fails.
 
 .EXAMPLE
-./tools/harness.ps1                                   # every target
+./tools/harness.ps1                                   # the two legacy targets
 ./tools/harness.ps1 -Targets forge-1.8.9              # one target
 ./tools/harness.ps1 -Targets fabric-1.21.11 -OutDir build\harness-fabric
+./tools/harness.ps1 -Targets fabric-1.21.11 -Commands remember.txt -OutDir build\harness-remember
 #>
 param(
     # <loader>-<mc>: forge-1.8.9 and forge-1.12.2 run in legacy/; fabric-<mc>, forge-<mc> and neoforge-<mc> run in modern/.
@@ -113,10 +116,11 @@ function Read-Expectations([string]$file) {
         $t = $line.Trim()
         if ($t -match "^#\s*expect\s+(.+)$") {
             $words = $Matches[1] -split "\s+"
-            if ($words.Count % 2 -ne 0) { throw "${file}: expect needs <bit> <on|off> pairs: $t" }
+            if ($words.Count % 2 -ne 0) { throw "${file}: expect needs <bit> <on|off> pairs or style <hex>: $t" }
             $pending = [ordered]@{}
             for ($i = 0; $i -lt $words.Count; $i += 2) {
-                if (-not $styleBits.ContainsKey($words[$i]) -or $words[$i + 1] -notin @("on", "off")) { throw "${file}: bad expect: $t" }
+                $full = $words[$i] -eq "style" -and $words[$i + 1] -match "^0x[0-9A-Fa-f]{8}$"
+                if (-not $full -and (-not $styleBits.ContainsKey($words[$i]) -or $words[$i + 1] -notin @("on", "off"))) { throw "${file}: bad expect: $t" }
                 $pending[$words[$i]] = $words[$i + 1]
             }
         } elseif ($t -eq "style") {
@@ -125,6 +129,12 @@ function Read-Expectations([string]$file) {
         }
     }
     return , $result
+}
+
+# The text of the "# <name> <text>" line of a commands file, or $null.
+function Read-Directive([string]$file, [string]$name) {
+    foreach ($line in Get-Content $file) { if ($line.Trim() -match "^#\s*$name\s+(.+)$") { return $Matches[1] } }
+    return $null
 }
 
 # The process ids of all descendants of a process.
@@ -184,11 +194,13 @@ foreach ($target in $Targets) {
     $loader, $version = $target -split "-", 2
     $commandsFile = Join-Path $PSScriptRoot "harness\$Commands"
     if ($loader -eq "forge" -and $legacyVersions -contains $version) {
-        $dir = Join-Path $root "legacy"; $task = ":${version}:runClientDev"; $runDir = Join-Path $dir "versions\$version\run"
+        $dir = Join-Path $root "legacy"; $task = ":${version}:runClientDev"; $runDir = Join-Path $dir "versions\$version\run"; $gradleOptions = ""
         $legacyFile = $commandsFile -replace "\.txt$", "-legacy.txt"
         if (Test-Path $legacyFile) { $commandsFile = $legacyFile }
     } elseif ($loader -in @("fabric", "forge", "neoforge")) {
         $dir = Join-Path $root "modern"; $task = ":${loader}:${version}:runClient"; $runDir = Join-Path $dir "$loader\versions\$version\run"
+        # Gradle then configures only the projects of this target, which is faster and keeps the Loom caches of the other versions apart.
+        $gradleOptions = "--configure-on-demand"
     } else {
         throw "unknown target: $target"
     }
@@ -196,8 +208,13 @@ foreach ($target in $Targets) {
 
     Set-Options $runDir
     if ($loader -in @("forge", "neoforge") -and $dir -like "*modern") { Set-FmlConfig $runDir }
-    # Each run starts with the default config.
-    Remove-Item -Force (Join-Path $runDir "config\windowstitlebardelete.json") -ErrorAction SilentlyContinue
+    $configFile = Join-Path $runDir "config\windowstitlebardelete.json"
+    $configStart = Read-Directive $commandsFile "config-start"
+    Remove-Item -Force $configFile -ErrorAction SilentlyContinue
+    if ($configStart) {
+        New-Item -ItemType Directory -Force (Split-Path -Parent $configFile) | Out-Null
+        Set-Content -Encoding ascii $configFile $configStart
+    }
 
     $harness = Join-Path $env:TEMP "wtd-harness\$target"
     Remove-Item -Recurse -Force $harness -ErrorAction SilentlyContinue
@@ -209,7 +226,7 @@ foreach ($target in $Targets) {
 
     Write-Host "[$target] launching hidden with $(Split-Path -Leaf $commandsFile)"
     $gradleLog = Join-Path $harness "gradle.log"
-    $launcher = & (Join-Path $PSScriptRoot "run-hidden.ps1") -Dir $dir -Task $task -Harness $harness -Log $gradleLog
+    $launcher = & (Join-Path $PSScriptRoot "run-hidden.ps1") -Dir $dir -Task $task -Options $gradleOptions -Harness $harness -Log $gradleLog
     $harnessLog = Join-Path $harness "log.txt"
     $outside = [Collections.Generic.List[object]]::new()
     $checkpoints = 0
@@ -254,7 +271,7 @@ foreach ($target in $Targets) {
     $out = Join-Path $root "$OutDir\$target"
     Remove-Item -Recurse -Force $out -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $out | Out-Null
-    Get-ChildItem $harness -Include *.png, log.txt, gradle.log -File -Recurse | Copy-Item -Destination $out -Force
+    Get-ChildItem $harness -Include log.txt, gradle.log -File -Recurse | Copy-Item -Destination $out -Force
 
     $lines = Read-SharedLines $harnessLog
     $styles = @($lines | Where-Object { $_ -match "^(style 0x|! style)" })
@@ -275,9 +292,9 @@ foreach ($target in $Targets) {
         $expectText = if ($expect) { ($expect.GetEnumerator() | ForEach-Object { "$($_.Key) $($_.Value)" }) -join ", " } else { "nothing" }
         if ($expect -and $null -ne $seen) {
             foreach ($e in $expect.GetEnumerator()) {
-                $bits = $styleBits[$e.Key]
-                $value = $seen -band $bits
-                if (($e.Value -eq "on" -and $value -ne $bits) -or ($e.Value -eq "off" -and $value -ne 0)) { $problems += "$($e.Key) is not $($e.Value)" }
+                $bits = if ($e.Key -eq "style") { -1 } else { $styleBits[$e.Key] }
+                $wanted = if ($e.Value -eq "on") { $bits } elseif ($e.Value -eq "off") { 0 } else { [Convert]::ToInt32($e.Value, 16) }
+                if (($seen -band $bits) -ne $wanted) { $problems += "$($e.Key) is not $($e.Value)" }
             }
         }
         $status = if ($problems) { "FAIL: " + ($problems -join "; ") } else { "PASS" }
@@ -288,6 +305,13 @@ foreach ($target in $Targets) {
     foreach ($e in $errors) { $report += "FAIL: harness error: $e" }
     if ($errors) { $pass = $false }
     if (-not $quit) { $report += "FAIL: the game did not get to quit"; $pass = $false }
+    $configEnd = Read-Directive $commandsFile "config-end"
+    if ($configEnd) {
+        $saved = if (Test-Path $configFile) { Get-Content -Raw $configFile } else { "" }
+        $has = $saved.Contains($configEnd)
+        $report += "config file after the run: expect $configEnd | $(if ($has) { 'PASS' } else { 'FAIL' })"
+        if (-not $has) { $pass = $false }
+    }
     $report += "result $(if ($pass) { 'PASS' } else { 'FAIL' })"
     $report | Set-Content -Encoding ascii (Join-Path $out "result.txt")
     if (-not $pass) { $failed++ }

@@ -16,7 +16,7 @@ class ConfigCodecTest {
 
     @Test
     void writesTheDocumentedKeys() {
-        assertEquals("{\n  \"hideOnStartup\": true,\n  \"keepResizeBorder\": false\n}\n",
+        assertEquals("{\n  \"hidden\": true,\n  \"keepResizeBorder\": false\n}\n",
                 ConfigCodec.encode(Config.DEFAULTS.withKeepResizeBorder(false)));
     }
 
@@ -29,8 +29,8 @@ class ConfigCodecTest {
 
     @Test
     void rejectsBrokenText() {
-        assertThrows(IllegalArgumentException.class, () -> ConfigCodec.decode("{\"hideOnStartup\": tru"));
+        assertThrows(IllegalArgumentException.class, () -> ConfigCodec.decode("{\"hidden\": tru"));
         assertThrows(IllegalArgumentException.class, () -> ConfigCodec.decode("[true]"));
-        assertThrows(IllegalArgumentException.class, () -> ConfigCodec.decode("{\"hideOnStartup\": \"yes\"}"));
+        assertThrows(IllegalArgumentException.class, () -> ConfigCodec.decode("{\"hidden\": \"yes\"}"));
     }
 }

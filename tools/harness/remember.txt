@@ -1,0 +1,16 @@
+# Test of the saved values for all targets of tools/harness.ps1 (-Commands remember.txt).
+# The "# config-start" line gives the config file that harness.ps1 writes before the game starts.
+# The "# config-end" line gives text that the config file must have after the game stops.
+# "# expect style <hex>" tells harness.ps1 the full style that the next "style" line must show.
+# 0x16CF0000 is the style of a game window that no program changed.
+# config-start {"hidden": false, "keepResizeBorder": false}
+# config-end "hidden": true
+wait 100
+# expect style 0x16CF0000
+style
+wait 40
+toggle
+# expect caption off thickframe off
+style
+wait 40
+quit

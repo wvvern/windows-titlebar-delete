@@ -62,7 +62,7 @@
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
         <module name="IllegalImport">
-            <!-- Ports and adapters: the core reaches the game only through Platform and Canvas. The com.sun rules are below. -->
+            <!-- Ports and adapters: the core reaches the game only through the Platform port. The com.sun rules are below. -->
             <property name="illegalPkgs" value="sun, java.awt, javax.imageio, javax.swing, net.minecraft, com.mojang, net.fabricmc, net.neoforged, net.minecraftforge, cpw.mods, org.spongepowered, com.llamalad7, org.lwjgl, wvv.windowstitlebardelete.modern, wvv.windowstitlebardelete.legacy, wvv.windowstitlebardelete.fabric, wvv.windowstitlebardelete.forge, wvv.windowstitlebardelete.neoforge"/>
         </module>
         <module name="RegexpSinglelineJava">
@@ -70,7 +70,7 @@
             <property name="id" value="noGameOrDesktopTypes"/>
             <property name="format" value="\b(java\.awt|javax\.swing|javax\.imageio|net\.minecraft|com\.mojang|org\.lwjgl|org\.spongepowered)\."/>
             <property name="ignoreComments" value="true"/>
-            <property name="message" value="Do not use game, LWJGL or desktop UI types in core. Use the Platform and Canvas ports."/>
+            <property name="message" value="Do not use game, LWJGL or desktop UI types in core. Use the Platform port."/>
         </module>
         <module name="RegexpSinglelineJava">
             <!-- The one com.sun library is JNA, without jna-platform, whose API differs between the JNA versions of the games. -->

@@ -2,8 +2,6 @@ package wvv.windowstitlebardelete.core.dev;
 
 import wvv.windowstitlebardelete.core.Platform;
 import wvv.windowstitlebardelete.core.Titlebar;
-import wvv.windowstitlebardelete.core.config.Config;
-import wvv.windowstitlebardelete.core.ui.SettingsEditor;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,11 +21,6 @@ public final class Harness {
     public interface Host {
         void setFullscreen(boolean on);
 
-        /** Writes the next rendered frame to {@code png}, then calls {@link Harness#log}. */
-        void screenshot(File png);
-
-        void closeScreen();
-
         void quit();
     }
 
@@ -39,19 +32,17 @@ public final class Harness {
     private static volatile File logFile;
 
     private final File dir;
-    private final Platform platform;
     private final Host host;
     private final Deque<String> queue = new ArrayDeque<String>();
     private int waitTicks;
     /** The ticks that passed before the game window was found, or -1 after it was found or after the limit. */
     private int windowTicks;
-    /** A {@code style} command ran, so the next tick logs the style that the reconcile of this tick set. */
+    /** A {@code style} command ran, so the next tick logs the style that the window has after this tick. */
     private boolean styleDue;
 
-    Harness(File dir, Platform platform) {
+    Harness(File dir, Host host) {
         this.dir = dir;
-        this.platform = platform;
-        this.host = platform.harnessHost();
+        this.host = host;
         logFile = new File(dir, "log.txt");
     }
 
@@ -62,10 +53,10 @@ public final class Harness {
         File dir = new File(path).getAbsoluteFile();
         dir.mkdirs();
         platform.info("Test harness enabled in " + dir);
-        return new Harness(dir, platform);
+        return new Harness(dir, platform.harnessHost());
     }
 
-    /** Runs the commands that are due, before the reconcile of {@link Titlebar#tick}. */
+    /** Runs the commands that are due, before {@link Titlebar#tick} examines the window. */
     public void tick() {
         takeCommandFile();
         if (windowTicks >= 0) {
@@ -99,37 +90,16 @@ public final class Harness {
         String arg = words.length > 1 ? words[1].trim() : "";
         if (verb.equals("wait")) waitTicks = Integer.parseInt(arg);
         else if (verb.equals("toggle")) Titlebar.toggle();
-        else if (verb.equals("set")) Titlebar.apply(withOption(Titlebar.config(), arg));
         else if (verb.equals("style")) styleDue = true;
-        else if (verb.equals("settings")) platform.openSettings();
-        else if (verb.equals("close")) host.closeScreen();
-        else if (verb.equals("click")) click(arg);
         else if (verb.equals("fullscreen")) host.setFullscreen(onOff(arg));
-        else if (verb.equals("shot")) host.screenshot(new File(dir, arg.endsWith(".png") ? arg : arg + ".png"));
         else if (verb.equals("quit")) host.quit();
         else log("! unknown command: " + verb);
-    }
-
-    /** The config with one option set from {@code <hideOnStartup|keepResizeBorder> <on|off>}. */
-    static Config withOption(Config config, String arg) {
-        String[] words = arg.split("\\s+");
-        if (words.length != 2) throw new IllegalArgumentException("set <hideOnStartup|keepResizeBorder> <on|off>");
-        boolean on = onOff(words[1]);
-        if (words[0].equals("hideOnStartup")) return config.withHideOnStartup(on);
-        if (words[0].equals("keepResizeBorder")) return config.withKeepResizeBorder(on);
-        throw new IllegalArgumentException("unknown option: " + words[0]);
     }
 
     static boolean onOff(String word) {
         if (word.equals("on")) return true;
         if (word.equals("off")) return false;
         throw new IllegalArgumentException("expected on or off: " + word);
-    }
-
-    private static void click(String label) {
-        SettingsEditor editor = SettingsEditor.current();
-        if (editor == null) log("! click: no settings screen is open");
-        else if (!editor.click(label)) log("! click: the settings screen has no control with the label " + label);
     }
 
     private static void logStyle() {

@@ -1,9 +1,11 @@
-# Titlebar test for the Forge 1.8.9 and 1.12.2 targets of tools/harness.ps1, which runs on the title screen.
+# Titlebar test for the Forge 1.8.9 and 1.12.2 targets of tools/harness.ps1, which starts the game with no config file.
 # It has no fullscreen step, because LWJGL 2 fullscreen can change the display mode of the real monitor also from a hidden desktop.
 # The core harness skips lines that start with "#".
 # A "# expect <bit> <on|off> ..." line tells harness.ps1 what the next "style" line must show.
 # The bits are caption (0x00C00000) and thickframe (0x00040000).
 # After each "style", "wait 40" keeps the window stable while harness.ps1 reads the style from outside the game.
+# The "# config-end" line gives text that the config file must have after the game stops.
+# config-end "hidden": true
 wait 100
 # expect caption off thickframe on
 style
@@ -13,26 +15,6 @@ toggle
 style
 wait 40
 toggle
-# expect caption off
-style
-wait 40
-set keepResizeBorder off
-# expect caption off thickframe off
-style
-wait 40
-set keepResizeBorder on
-settings
-wait 40
-shot settings
-wait 10
-click Hide the titlebar at startup
-wait 10
-shot settings-off
-wait 10
-click Hide the titlebar at startup
-wait 10
-click Done
-wait 20
 # expect caption off thickframe on
 style
 wait 40

@@ -5,7 +5,7 @@ A release is a tag such as `v2.0.0`. CI builds all jars, makes a GitHub release 
 ## Steps
 
 1. Make sure that CI is green on `master`.
-2. Run the harness for all 39 targets on a Windows computer (command below). Each target must print `PASS`. Write the results and the date in [TESTED.md](TESTED.md). CI does not run the harness.
+2. Run the harness for all 39 targets on a Windows computer, one time with each commands file (commands below). Each target must print `PASS` in the two runs. Write the results and the date in [TESTED.md](TESTED.md). CI does not run the harness.
 3. Select the version (semantic versioning): a breaking config change increases the major number, a `feat` increases the minor number, only `fix` and `perf` increase the patch number.
 4. Set the version in two places: `mod_version` in `modern/gradle.properties` and `modVersion` in `legacy/gradle.properties`. The two values must be the same. CI builds the jars with the version of the tag.
 5. Write the `CHANGELOG.md` section for the version (rules below). Put it at the top, under the title.
@@ -16,6 +16,7 @@ A target is `<loader>-<node>`, where the node is a version in `modern/settings.g
 
 ```powershell
 pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,forge-1.12.2,fabric-26.3,neoforge-26.3 -OutDir build\harness"
+pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,forge-1.12.2,fabric-26.3,neoforge-26.3 -Commands remember.txt -OutDir build\harness-remember"
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the harness. With no `-Targets`, the script runs only the two legacy targets.
@@ -60,7 +61,7 @@ Example:
 ```
 ## 2.1.0
 
-- feat: Add the option Hide the titlebar only when the window is maximized
+- feat: Add "onlyWhenMaximized" to the config file, which hides the titlebar only in a maximized window
 - fix: Keep the titlebar hidden after you leave fullscreen on Forge 1.12.2
 - compat: Add jars for Minecraft 26.4
 ```

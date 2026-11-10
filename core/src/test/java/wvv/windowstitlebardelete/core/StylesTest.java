@@ -15,26 +15,26 @@ class StylesTest {
 
     @Test
     void hiddenWithBorderKeepsThickFrameAndMaximizeBox() {
-        assertEquals(OTHER | WS_THICKFRAME | WS_MAXIMIZEBOX, Styles.wanted(OTHER | ALL, true, true));
+        assertEquals(OTHER | WS_THICKFRAME | WS_MAXIMIZEBOX, Styles.hidden(OTHER | ALL, true));
     }
 
     @Test
     void hiddenWithoutBorderKeepsOnlyMaximizeBox() {
-        assertEquals(OTHER | WS_MAXIMIZEBOX, Styles.wanted(OTHER | ALL, true, false));
+        assertEquals(OTHER | WS_MAXIMIZEBOX, Styles.hidden(OTHER | ALL, false));
     }
 
     @Test
     void shownSetsAllTitlebarBits() {
-        assertEquals(OTHER | ALL, Styles.wanted(OTHER, false, true));
-        assertEquals(OTHER | ALL, Styles.wanted(OTHER, false, false));
+        assertEquals(OTHER | ALL, Styles.shown(OTHER));
+        assertEquals(FakeWindow.NORMAL, Styles.shown(Styles.hidden(FakeWindow.NORMAL, false)));
     }
 
     @Test
     void popupWindowKeepsItsStyle() {
-        int popup = Styles.WS_POPUP | OTHER;
-        for (int combo = 0; combo < 4; combo++) {
-            assertEquals(popup, Styles.wanted(popup, (combo & 1) != 0, (combo & 2) != 0));
-            assertEquals(popup | ALL, Styles.wanted(popup | ALL, (combo & 1) != 0, (combo & 2) != 0));
+        for (int popup : new int[]{Styles.WS_POPUP | OTHER, Styles.WS_POPUP | OTHER | ALL}) {
+            assertEquals(popup, Styles.hidden(popup, true));
+            assertEquals(popup, Styles.hidden(popup, false));
+            assertEquals(popup, Styles.shown(popup));
         }
     }
 
@@ -42,12 +42,11 @@ class StylesTest {
     void isIdempotentAndKeepsOtherBits() {
         int[] styles = {0, OTHER, OTHER | ALL, OTHER | WS_CAPTION, ~0, ~ALL, FakeWindow.NORMAL};
         for (int style : styles) {
-            for (int combo = 0; combo < 4; combo++) {
-                boolean hidden = (combo & 1) != 0, keep = (combo & 2) != 0;
-                int once = Styles.wanted(style, hidden, keep);
-                assertEquals(once, Styles.wanted(once, hidden, keep));
-                assertEquals(style & ~ALL, once & ~ALL);
-            }
+            int[] results = {Styles.hidden(style, true), Styles.hidden(style, false), Styles.shown(style)};
+            assertEquals(results[0], Styles.hidden(results[0], true));
+            assertEquals(results[1], Styles.hidden(results[1], false));
+            assertEquals(results[2], Styles.shown(results[2]));
+            for (int result : results) assertEquals(style & ~ALL, result & ~ALL);
         }
     }
 }

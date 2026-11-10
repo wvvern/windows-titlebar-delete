@@ -1,7 +1,6 @@
 package wvv.windowstitlebardelete.modern;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import wvv.windowstitlebardelete.core.Platform;
@@ -40,23 +39,5 @@ final class ModernPlatform implements Platform {
         *///?}
     }
 
-    @Override public void openSettings() { setScreen(new SettingsScreen(currentScreen())); }
-
     @Override public Harness.Host harnessHost() { return new ModernHarnessHost(); }
-
-    static Screen currentScreen() {
-        //? if >=26.2 {
-        return Minecraft.getInstance().gui.screen();
-        //?} else {
-        /*return Minecraft.getInstance().screen;
-        *///?}
-    }
-
-    static void setScreen(Screen screen) {
-        //? if >=26.2 {
-        Minecraft.getInstance().gui.setScreen(screen);
-        //?} else {
-        /*Minecraft.getInstance().setScreen(screen);
-        *///?}
-    }
 }

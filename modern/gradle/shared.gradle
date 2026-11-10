@@ -9,7 +9,6 @@ versionProperties.each { key, value -> project.ext.set(key, value) }
 // Minecraft is obfuscated up to 1.21.11 and unobfuscated from 26.1 on.
 def unobfuscated = stonecutter.eval(stonecutter.current.version, '>=26.1')
 def javaVersion = (project.java_version as String).toInteger()
-ext.unobfuscated = unobfuscated
 ext.modImplementation = unobfuscated ? 'implementation' : 'modImplementation'
 ext.commonNamed = { String path -> unobfuscated ? project.project(path) : project.dependencies.project(path: path, configuration: 'namedElements') }
 // The loaders that have a jar for this Minecraft version.

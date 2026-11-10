@@ -5,14 +5,8 @@ architectury {
     fabric()
 }
 
-repositories {
-    maven { name = 'TerraformersMC'; url = 'https://maven.terraformersmc.com/releases' }
-}
-
 dependencies {
     add(project.modImplementation, "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version")
-    // Only the "Configure" button in Mod Menu uses it, and the mod runs without Mod Menu.
-    add(project.unobfuscated ? 'compileOnly' : 'modCompileOnly', "com.terraformersmc:modmenu:$project.modmenu_version") { transitive = false }
 }
 
 processResources {

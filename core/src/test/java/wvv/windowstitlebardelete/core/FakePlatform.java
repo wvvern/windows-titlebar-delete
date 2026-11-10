@@ -34,19 +34,10 @@ public final class FakePlatform implements Platform, Harness.Host {
     public boolean isFullscreen() { return fullscreen; }
 
     @Override
-    public void openSettings() { calls.add("openSettings"); }
-
-    @Override
     public Harness.Host harnessHost() { return this; }
 
     @Override
     public void setFullscreen(boolean on) { calls.add("setFullscreen " + on); }
-
-    @Override
-    public void screenshot(File png) { calls.add("screenshot " + png.getName()); }
-
-    @Override
-    public void closeScreen() { calls.add("closeScreen"); }
 
     @Override
     public void quit() { calls.add("quit"); }

@@ -33,7 +33,7 @@ bash tools/lint.sh                   # text and comment rules, from the reposito
 2. Never use `--no-verify`.
 3. Write all text that users read in ASD-STE100 Simplified Technical English, with ASCII characters only.
 4. A comment has one sentence. It never tells the history of the code.
-5. Do not add an implicit state machine. `Titlebar.tick` calculates the wanted window style from the config each tick.
+5. Do not add an implicit state machine. While the titlebar is hidden, `Titlebar.tick` reads the window style each tick and writes the hidden style only when it is different. While the titlebar shows, only `Titlebar.toggle` writes a style.
 6. Do not over-engineer. Add a class only when it removes more code than it adds.
 7. Never start a game window, or a program that makes sound, on the visible desktop. Use `tools/harness.ps1`, which uses a hidden desktop.
 8. Never download OptiFine.
@@ -48,7 +48,8 @@ Do each task in this sequence: plan, review of the plan, implement, `/code-revie
 
 - Pass `-Targets` through `pwsh -Command`, so that PowerShell reads the list as an array: `pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,fabric-1.21.11 -OutDir build\harness"`.
 - A target is `<loader>-<node>`, for example `neoforge-26.1`. With no `-Targets`, the script runs only `forge-1.8.9` and `forge-1.12.2`.
-- Modern targets use `tools/harness/titlebar.txt` (6 checkpoints). Legacy targets use `tools/harness/titlebar-legacy.txt` (5 checkpoints).
+- Modern targets use `tools/harness/titlebar.txt` (4 checkpoints). Legacy targets use `tools/harness/titlebar-legacy.txt` (3 checkpoints).
+- Run each target a second time with `-Commands remember.txt` (2 checkpoints) and a different `-OutDir`. This run starts with a config file that the script writes.
 - Keep `-OutDir` relative to the repository root. The result of a target is `<OutDir>\<target>\result.txt`.
 - Give each agent its own `TEMP` folder. The harness files are in `%TEMP%\wtd-harness\<target>`, and two runs of one target must not share them.
 - NeoForge and modern Forge runs need `earlyWindowControl = false` in `config/fml.toml`. `tools/harness.ps1` sets it.

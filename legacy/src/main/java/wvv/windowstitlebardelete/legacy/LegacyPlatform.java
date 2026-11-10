@@ -24,11 +24,5 @@ final class LegacyPlatform implements Platform {
 
     @Override public boolean isFullscreen() { return Minecraft.getMinecraft().isFullScreen(); }
 
-    @Override
-    public void openSettings() {
-        Minecraft mc = Minecraft.getMinecraft();
-        mc.displayGuiScreen(new GuiSettings(mc.currentScreen));
-    }
-
     @Override public Harness.Host harnessHost() { return new LegacyHarnessHost(); }
 }

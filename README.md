@@ -12,7 +12,6 @@ Get the jar for your Minecraft version and loader from [Modrinth](https://modrin
 
 - Fabric needs only Fabric Loader. It does not need Fabric API.
 - Quilt has no jar of its own. Use the Fabric jar, which Modrinth lists for Quilt on Minecraft 1.18.2 and later. The mod is not tested on Quilt.
-- [Mod Menu](https://modrinth.com/mod/modmenu) is optional on Fabric. It adds the button that opens the settings screen.
 
 | Minecraft          | Fabric | Quilt | Forge | NeoForge |
 |--------------------|:------:|:-----:|:-----:|:--------:|
@@ -47,34 +46,32 @@ The mod is tested with the last Minecraft version of each line. See [docs/TESTED
 
 The key `Toggle the titlebar` shows or hides the titlebar. The default key is F12. You can change it in the Controls screen, in the category Miscellaneous.
 
-The key changes the titlebar only until you close the game. It does not change the settings.
+The mod remembers the state of the titlebar. When you start the game again, the titlebar is hidden or shown as you left it. A new install starts with no titlebar.
 
-## Settings
-
-Open the settings screen from Mod Menu (Fabric) or with the Config button of the mod list (Forge, NeoForge).
-
-| Option | Default | Effect |
-|--------|:-------:|--------|
-| Hide the titlebar at startup | On | The game starts with no titlebar. If the option is off, the titlebar stays until you press the key. |
-| Keep the resize border | On | The window keeps its thin border, so you can change its size with the mouse and maximize it with Win+Up. If the option is off, the window has no frame. |
+While the titlebar shows, the mod does not change the game window.
 
 ## Config file
 
-The settings are in `config/windowstitlebardelete.json`. The mod writes the file at the first start.
+The config file is `config/windowstitlebardelete.json`. The mod writes the file the first time that the game starts with the mod.
 
 ```json
 {
-  "hideOnStartup": true,
+  "hidden": true,
   "keepResizeBorder": true
 }
 ```
 
-The mod reads the file when the game starts. If the file is not valid, the mod uses the default settings and writes a warning to the log.
+| Key | Default | Effect |
+|-----|:-------:|--------|
+| `hidden` | `true` | `true` hides the titlebar. The mod writes this value each time you press the key. |
+| `keepResizeBorder` | `true` | With `true`, a window with no titlebar keeps its thin border, so you can change its size with the mouse and maximize it with Win+Up. With `false`, the window has no frame. Only the file can change this value. |
+
+The mod reads the file only when the game starts. Thus, close the game before you edit the file. If the file is not valid, the mod uses the default values and writes a warning to the log.
 
 ## Known limits
 
 - The mod works only on Windows.
-- The mod does not change the window while the game is in fullscreen.
+- The mod does not change the window while the game is in fullscreen. If you press the key in fullscreen, you see the result when you go back to the window.
 - If the titlebar is hidden and the window is not maximized, the window can become taller each time you go to fullscreen and back.
 - If a different mod makes the window borderless, that mod keeps control of the window. Windows Titlebar Delete does not change such a window.
 

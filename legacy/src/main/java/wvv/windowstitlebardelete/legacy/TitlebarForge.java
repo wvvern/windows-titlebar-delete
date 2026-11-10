@@ -12,10 +12,9 @@ import wvv.windowstitlebardelete.core.Titlebar;
 
 /** Forge entry point shared by every legacy Minecraft version. */
 @Mod(modid = Titlebar.MOD_ID, name = Titlebar.MOD_NAME, version = BuildInfo.VERSION, clientSideOnly = true,
-        acceptedMinecraftVersions = McCompat.ACCEPTED_MINECRAFT_VERSIONS, guiFactory = "wvv.windowstitlebardelete.legacy.GuiFactory")
+        acceptedMinecraftVersions = BuildInfo.MINECRAFT_RANGE)
 public class TitlebarForge {
-    /** The toggle key, which the settings screen names. */
-    static KeyBinding key;
+    private KeyBinding key;
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
