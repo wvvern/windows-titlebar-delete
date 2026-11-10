@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import wvv.windowstitlebardelete.core.Titlebar;
 
+import java.io.File;
 import java.util.Arrays;
 
 /** The loader-independent entry points that the loader adapters and the mixins call. */
@@ -12,9 +13,9 @@ public final class ModernHooks {
 
     private ModernHooks() {}
 
-    /** Starts the mod on the client, where {@code loader} is the name of the loader for the logs. */
-    public static void bootstrap(String loader) {
-        Titlebar.init(new ModernPlatform(loader));
+    /** Starts the mod on the client with the name of the loader for the logs and the config folder that the loader gives. */
+    public static void bootstrap(String loader, File configDir) {
+        Titlebar.init(new ModernPlatform(loader, configDir));
     }
 
     /** Runs at the start of every client tick, also on the title screen. */

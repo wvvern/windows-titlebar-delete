@@ -1,6 +1,5 @@
 package wvv.windowstitlebardelete.modern;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import wvv.windowstitlebardelete.core.Titlebar;
@@ -9,9 +8,6 @@ import wvv.windowstitlebardelete.core.ui.SettingsEditor;
 
 /** Hosts the core {@link SettingsEditor} on Minecraft 1.16.5 and later. */
 public final class SettingsScreen extends Screen implements Canvas {
-    /** The number of the left mouse button, which is 0 with GLFW and 1 with SDL on 26.x. */
-    private static final int LEFT_BUTTON = InputConstants.getKey("key.mouse.left").getValue();
-
     private final Screen parent;
     private final SettingsEditor editor = new SettingsEditor(ModernHooks.key().getTranslatedKeyMessage().getString());
     /** The drawing target of the frame that the game draws now. */
@@ -55,10 +51,10 @@ public final class SettingsScreen extends Screen implements Canvas {
     @Override
     //? if >=1.21.9 {
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-        if (event.button() == LEFT_BUTTON) editor.mouseClicked((int) event.x(), (int) event.y());
+        editor.mouseClicked((int) event.x(), (int) event.y());
     //?} else {
     /*public boolean mouseClicked(double x, double y, int button) {
-        if (button == LEFT_BUTTON) editor.mouseClicked((int) x, (int) y);
+        editor.mouseClicked((int) x, (int) y);
     *///?}
         return true;
     }

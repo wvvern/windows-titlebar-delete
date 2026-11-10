@@ -11,9 +11,9 @@ loom {
     }
 }
 
-// Loom keeps the SRG names of two calls in the Forge 1.16.5 patches, which stops the dev game when it loads the models,
-// so only the harness run (-Pharness) adds the mixin of forge/dev-1.16.5 that has these two methods, and no jar has it.
-if (project.minecraft_version == '1.16.5' && project.hasProperty('harness')) {
+// Only a Gradle run of runClient alone with -Pharness adds the mixin of forge/dev-1.16.5, which the dev game of Forge 1.16.5 needs, so no jar has it.
+def harnessRun = project.hasProperty('harness') && gradle.startParameter.taskNames.every { it.endsWith('runClient') }
+if (project.minecraft_version == '1.16.5' && harnessRun) {
     sourceSets.main.java.srcDir rootProject.file('forge/dev-1.16.5/java')
     sourceSets.main.resources.srcDir rootProject.file('forge/dev-1.16.5/resources')
     loom { forge { mixinConfig "${rootProject.mod_id}.dev.mixins.json" } }

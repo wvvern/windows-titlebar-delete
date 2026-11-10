@@ -16,19 +16,16 @@ final class ModernPlatform implements Platform {
     private static final Logger LOG = LogManager.getLogger(Titlebar.MOD_NAME);
 
     private final String loader;
+    private final File configDir;
 
-    ModernPlatform(String loader) {
+    ModernPlatform(String loader, File configDir) {
         this.loader = loader;
+        this.configDir = configDir;
     }
 
     @Override public String describe() { return loader + " " + MINECRAFT; }
 
-    @Override
-    public File configDir() {
-        // Forge and NeoForge can start the mod before the game object has its folder.
-        Minecraft mc = Minecraft.getInstance();
-        return mc != null && mc.gameDirectory != null ? new File(mc.gameDirectory, "config") : new File("config");
-    }
+    @Override public File configDir() { return configDir; }
 
     @Override public void info(String message) { LOG.info(message); }
 

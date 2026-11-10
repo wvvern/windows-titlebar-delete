@@ -3,6 +3,7 @@ package wvv.windowstitlebardelete.neoforge;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLPaths;
 //? if >=1.20.5 {
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 //?} else {
@@ -21,7 +22,7 @@ import wvv.windowstitlebardelete.modern.SettingsScreen;
 public final class TitlebarNeoForge {
     public TitlebarNeoForge(ModContainer container) {
         //? if >=1.20.5 {
-        ModernHooks.bootstrap("NeoForge");
+        ModernHooks.bootstrap("NeoForge", FMLPaths.CONFIGDIR.get().toFile());
         container.registerExtensionPoint(IConfigScreenFactory.class, (mod, parent) -> new SettingsScreen(parent));
         //?} else {
         /*if (FMLEnvironment.dist == Dist.CLIENT) client(container);
@@ -30,7 +31,7 @@ public final class TitlebarNeoForge {
 
     //? if <1.20.5 {
     /*private static void client(ModContainer container) {
-        ModernHooks.bootstrap("NeoForge");
+        ModernHooks.bootstrap("NeoForge", FMLPaths.CONFIGDIR.get().toFile());
         container.registerExtensionPoint(ConfigScreenFactory.class, () -> new ConfigScreenFactory((mc, parent) -> new SettingsScreen(parent)));
     }
     *///?}

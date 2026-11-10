@@ -18,7 +18,7 @@
   },
   "mixins": ["windowstitlebardelete.mixins.json"],
   "depends": {
-    "fabricloader": ">=${fabric_loader_version}",
+    "fabricloader": ">=${fabric_loader_min}",
     "minecraft": "${minecraft_range}",
     "java": ">=${java_version}"
   }
