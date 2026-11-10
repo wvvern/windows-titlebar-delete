@@ -10,9 +10,9 @@ The mod works only on Windows. On other operating systems it writes one line to 
 
 Get the jar for your Minecraft version and loader from [Modrinth](https://modrinth.com/mod/windows-titlebar-delete) or from the [GitHub releases](https://github.com/wvvern/windows-titlebar-delete/releases). Put it in your `mods/` folder.
 
-- Fabric needs only Fabric Loader, not Fabric API.
-- Quilt uses the Fabric jar.
-- [Mod Menu](https://modrinth.com/mod/modmenu) is optional on Fabric and Quilt. It adds the button that opens the settings screen.
+- Fabric needs only Fabric Loader. It does not need Fabric API.
+- Quilt has no jar of its own. Use the Fabric jar, which Modrinth lists for Quilt on Minecraft 1.18.2 and later. The mod is not tested on Quilt.
+- [Mod Menu](https://modrinth.com/mod/modmenu) is optional on Fabric. It adds the button that opens the settings screen.
 
 | Minecraft          | Fabric | Quilt | Forge | NeoForge |
 |--------------------|:------:|:-----:|:-----:|:--------:|
@@ -37,7 +37,11 @@ Get the jar for your Minecraft version and loader from [Modrinth](https://modrin
 | 26.2               | Yes    | Yes   |       | Yes      |
 | 26.3               | Yes    | Yes   |       | Yes      |
 
-Each line of the table has its own jar. The name of the jar shows the loader and the last Minecraft version of the line, for example `windowstitlebardelete-fabric-2.0.0+1.21.8.jar`.
+Each line of the table has its own jar for each loader. The name of the jar shows the loader and the last Minecraft version of the line, for example `windowstitlebardelete-fabric-2.0.0+1.21.8.jar`.
+
+A `Yes` in the Quilt column shows that Modrinth lists the Fabric jar for Quilt. It does not show a test.
+
+The mod is tested with the last Minecraft version of each line. See [docs/TESTED.md](docs/TESTED.md).
 
 ## Key
 
@@ -47,7 +51,7 @@ The key changes the titlebar only until you close the game. It does not change t
 
 ## Settings
 
-Open the settings screen from Mod Menu (Fabric, Quilt) or with the Config button of the mod list (Forge, NeoForge).
+Open the settings screen from Mod Menu (Fabric) or with the Config button of the mod list (Forge, NeoForge).
 
 | Option | Default | Effect |
 |--------|:-------:|--------|
@@ -66,6 +70,13 @@ The settings are in `config/windowstitlebardelete.json`. The mod writes the file
 ```
 
 The mod reads the file when the game starts. If the file is not valid, the mod uses the default settings and writes a warning to the log.
+
+## Known limits
+
+- The mod works only on Windows.
+- The mod does not change the window while the game is in fullscreen.
+- If the titlebar is hidden and the window is not maximized, the window can become taller each time you go to fullscreen and back.
+- If a different mod makes the window borderless, that mod keeps control of the window. Windows Titlebar Delete does not change such a window.
 
 ## Build from source
 

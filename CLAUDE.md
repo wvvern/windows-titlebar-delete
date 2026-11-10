@@ -5,15 +5,18 @@ A client-side Minecraft mod that hides the Windows titlebar of the game window. 
 Read these files before you change the project:
 
 - [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md): the rules for code, text and commits.
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): the core, the two builds, the hooks and the harness.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): the core, the two adapters, the two builds, the hooks, the harness and the known gaps.
 - [docs/RELEASING.md](docs/RELEASING.md): the release steps and the changelog rules.
+- [docs/TESTED.md](docs/TESTED.md): the harness result of each target.
 
 ## Layout
 
 - `core/`: plain Java 8 with all of the logic. It has no Minecraft types.
-- `modern/`: Fabric, Forge and NeoForge for 1.16.5 to 26.3 (Stonecutter, Gradle 9.8 on JDK 25).
-- `legacy/`: Forge 1.8.9 and 1.12.2 (Gradle 8.8 on JDK 21, game on Java 8).
-- `tools/`: `lint.sh`, `release-notes.sh`, `harness.ps1`, `run-hidden.ps1`.
+- `modern/`: Fabric, Forge and NeoForge for 1.16.5 to 26.3 (Stonecutter, Gradle 9.8 on JDK 25). It builds 37 jars.
+- `legacy/`: Forge 1.8.9 and 1.12.2 (Gradle 8.8 on JDK 21, game on Java 8). It builds 2 jars.
+- `tools/`: `lint.sh` with `comments.py`, `release-notes.sh`, `harness.ps1` with the command files in `harness/`, `run-hidden.ps1`.
+
+A release has 39 jars. The version of the mod is in two places: `mod_version` in `modern/gradle.properties` and `modVersion` in `legacy/gradle.properties`.
 
 ## Checks
 
@@ -44,7 +47,9 @@ Do each task in this sequence: plan, review of the plan, implement, `/code-revie
 ## Harness tips
 
 - Pass `-Targets` through `pwsh -Command`, so that PowerShell reads the list as an array: `pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,fabric-1.21.11 -OutDir build\harness"`.
-- Keep `-OutDir` relative to the repository root.
+- A target is `<loader>-<node>`, for example `neoforge-26.1`. With no `-Targets`, the script runs only `forge-1.8.9` and `forge-1.12.2`.
+- Modern targets use `tools/harness/titlebar.txt` (6 checkpoints). Legacy targets use `tools/harness/titlebar-legacy.txt` (5 checkpoints).
+- Keep `-OutDir` relative to the repository root. The result of a target is `<OutDir>\<target>\result.txt`.
 - Give each agent its own `TEMP` folder. The harness files are in `%TEMP%\wtd-harness\<target>`, and two runs of one target must not share them.
 - NeoForge and modern Forge runs need `earlyWindowControl = false` in `config/fml.toml`. `tools/harness.ps1` sets it.
 - Make all native calls on the client thread.
