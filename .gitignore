@@ -7,7 +7,6 @@ runs/
 *.iml
 .vscode/
 .kotlin/
-.claude/*
-!.claude/skills/
+.claude/
 # Stonecutter generates per-version sources/build dirs
 **/versions/*/build/
