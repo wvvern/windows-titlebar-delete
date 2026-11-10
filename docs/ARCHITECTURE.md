@@ -157,7 +157,7 @@ cd legacy && ./gradlew build                        # 2 jars -> legacy/versions/
 1. Add `modern/versions/<v>/gradle.properties`. For Forge and NeoForge, also add `modern/<loader>/versions/<v>/gradle.properties` with `loom.platform=<loader>`.
 2. Add `<v>` to the `versions` list in `modern/settings.gradle` and to the list of each loader branch that has it.
 3. Run `./gradlew --configure-on-demand :fabric:<v>:releaseJar` in `modern/`, and the same for the other loaders. The compile errors show the names that changed. Fix each one with a `//? if` branch, and add the boundary to the table above.
-4. Run `tools/harness.ps1` for each new target, one time with each commands file. It must print `PASS`. Add the result to [TESTED.md](TESTED.md).
+4. Run `tools/harness.ps1` for each new target, one time with each commands file. It must print `PASS`.
 5. Add a line to the matrix in `.github/workflows/ci.yml` and to the table in `README.md`.
 
 For a legacy version, add `legacy/versions/<mc>/gradle.properties` and the version in `legacy/settings.gradle.kts`.

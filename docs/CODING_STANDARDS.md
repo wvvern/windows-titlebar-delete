@@ -54,8 +54,8 @@ Checkstyle examines `core/src/main` and `core/src/test` only. It does not examin
 26. Do not commit `TODO` or `FIXME` comments. Open an issue. `[cs] TodoComment`
 27. Layout: indent with 4 spaces. You can write an `if`, `for` or `else` with no braces if the statement fits on one line. `[review]`
 28. Javadoc is short. Write it for public types, and for members when the name does not tell enough. For each change to core behavior, add or change a JUnit 5 test. `[review]`
-29. A comment has one sentence. Each Javadoc tag (`@param`, `@return`) has one sentence. If you need more, give the code a better name or split it. `[lint]`
-30. A comment tells what the code does and why. It does not tell what the code did before a change. Put the history in the commit message. `[lint]` `[review]`
+29. A comment has one sentence. Each Javadoc tag (`@param`, `@return`) has one sentence. If you need more, give the code a better name or split it. `[review]`
+30. A comment tells what the code does and why. It does not tell what the code did before a change. Put the history in the commit message. `[review]`
 31. Keep the mod small. Add a class only when it removes more code than it adds. `[review]`
 
 ## Commits

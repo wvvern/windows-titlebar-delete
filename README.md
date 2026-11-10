@@ -40,8 +40,6 @@ Each line of the table has its own jar for each loader. The name of the jar show
 
 A `Yes` in the Quilt column shows that Modrinth lists the Fabric jar for Quilt. It does not show a test.
 
-The mod is tested with the last Minecraft version of each line. See [docs/TESTED.md](docs/TESTED.md).
-
 ## Key
 
 The key `Toggle the titlebar` shows or hides the titlebar. The default key is F12. You can change it in the Controls screen, in the category Miscellaneous.
