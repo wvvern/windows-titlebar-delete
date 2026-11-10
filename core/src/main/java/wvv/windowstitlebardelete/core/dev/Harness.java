@@ -97,10 +97,9 @@ public final class Harness {
         String[] words = line.split("\\s+", 2);
         String verb = words[0];
         String arg = words.length > 1 ? words[1].trim() : "";
-        Config config = Titlebar.config();
         if (verb.equals("wait")) waitTicks = Integer.parseInt(arg);
         else if (verb.equals("toggle")) Titlebar.toggle();
-        else if (verb.equals("set")) Titlebar.apply(withOption(config, arg));
+        else if (verb.equals("set")) Titlebar.apply(withOption(Titlebar.config(), arg));
         else if (verb.equals("style")) styleDue = true;
         else if (verb.equals("settings")) platform.openSettings();
         else if (verb.equals("close")) host.closeScreen();
@@ -153,14 +152,11 @@ public final class Harness {
     }
 
     /** Appends a line to the harness log, from any thread, and never throws. */
-    public static void log(String message) {
-        File f = logFile;
-        if (f != null) write(f, message + System.getProperty("line.separator"));
-    }
-
-    private static synchronized void write(File f, String text) {
+    public static synchronized void log(String message) {
+        if (logFile == null) return;
         try {
-            Files.write(f.toPath(), text.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            byte[] line = (message + System.getProperty("line.separator")).getBytes(StandardCharsets.UTF_8);
+            Files.write(logFile.toPath(), line, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException ignored) {
             // Logging must never break the game.
         }

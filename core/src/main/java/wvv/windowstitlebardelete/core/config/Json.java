@@ -1,13 +1,12 @@
 package wvv.windowstitlebardelete.core.config;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Tiny JSON reader and writer so the core needs no library, because the Gson API differs across the Minecraft versions. */
-public final class Json {
+/** Tiny JSON reader so the core needs no library, because the Gson API differs across the Minecraft versions. */
+final class Json {
     private final String s;
     private int i;
 
@@ -19,7 +18,7 @@ public final class Json {
      * Parses text into Map (insertion ordered), List, String, Double, Boolean or null, and accepts // line comments
      * and trailing commas because people edit the config file by hand.
      */
-    public static Object parse(String text) {
+    static Object parse(String text) {
         Json p = new Json(text);
         p.skip();
         Object v = p.value();
@@ -146,43 +145,5 @@ public final class Json {
             if (s.charAt(k) == '\n') { line++; col = 1; } else col++;
         }
         return new IllegalArgumentException("JSON error at line " + line + ", column " + col + ": " + msg);
-    }
-
-    /** Writes a Map of String keys to String, Boolean or Number values as indented JSON with a newline at the end. */
-    public static String write(Map<String, Object> root) {
-        StringBuilder sb = new StringBuilder();
-        if (root.isEmpty()) return "{}\n";
-        sb.append("{\n");
-        Iterator<Map.Entry<String, Object>> it = root.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, Object> e = it.next();
-            sb.append("  ");
-            quote(sb, e.getKey());
-            sb.append(": ");
-            Object v = e.getValue();
-            if (v instanceof String) quote(sb, (String) v);
-            else if (v instanceof Boolean || v instanceof Number) sb.append(v);
-            else throw new IllegalArgumentException("cannot write " + v);
-            if (it.hasNext()) sb.append(',');
-            sb.append('\n');
-        }
-        return sb.append("}\n").toString();
-    }
-
-    private static void quote(StringBuilder sb, String str) {
-        sb.append('"');
-        for (int k = 0; k < str.length(); k++) {
-            char c = str.charAt(k);
-            switch (c) {
-                case '"': sb.append("\\\""); break;
-                case '\\': sb.append("\\\\"); break;
-                case '\n': sb.append("\\n"); break;
-                case '\t': sb.append("\\t"); break;
-                case '\r': sb.append("\\r"); break;
-                default:
-                    if (c < 0x20) sb.append(String.format("\\u%04x", (int) c)); else sb.append(c);
-            }
-        }
-        sb.append('"');
     }
 }

@@ -1,6 +1,5 @@
 package wvv.windowstitlebardelete.core.config;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -14,10 +13,8 @@ public final class ConfigCodec {
     private ConfigCodec() {}
 
     public static String encode(Config config) {
-        Map<String, Object> root = new LinkedHashMap<String, Object>();
-        root.put(HIDE_ON_STARTUP, config.hideOnStartup());
-        root.put(KEEP_RESIZE_BORDER, config.keepResizeBorder());
-        return Json.write(root);
+        return "{\n  \"" + HIDE_ON_STARTUP + "\": " + config.hideOnStartup()
+                + ",\n  \"" + KEEP_RESIZE_BORDER + "\": " + config.keepResizeBorder() + "\n}\n";
     }
 
     /** @throws IllegalArgumentException when the text is not a JSON object or a value is not true or false */

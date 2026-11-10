@@ -2,12 +2,12 @@ package wvv.windowstitlebardelete.core.dev;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import wvv.windowstitlebardelete.core.FakeCanvas;
 import wvv.windowstitlebardelete.core.FakePlatform;
 import wvv.windowstitlebardelete.core.FakeWindow;
 import wvv.windowstitlebardelete.core.Styles;
 import wvv.windowstitlebardelete.core.Titlebar;
 import wvv.windowstitlebardelete.core.config.Config;
-import wvv.windowstitlebardelete.core.ui.Canvas;
 import wvv.windowstitlebardelete.core.ui.SettingsEditor;
 
 import java.io.File;
@@ -119,22 +119,7 @@ class HarnessTest {
     void clicksTheSettingsScreen() throws IOException {
         start("click Done", "click Keep the resize border", "click Nothing");
         SettingsEditor editor = new SettingsEditor("F12");
-        editor.render(new Canvas() {
-            @Override
-            public int width() { return 854; }
-
-            @Override
-            public int height() { return 480; }
-
-            @Override
-            public void fill(int x, int y, int w, int h, int argb) {}
-
-            @Override
-            public void text(String text, int x, int y, int argb) {}
-
-            @Override
-            public int textWidth(String text) { return text.length() * 6; }
-        }, 0, 0);
+        editor.render(new FakeCanvas(854, 480), 0, 0);
         ticks(1);
         assertTrue(editor.done());
         assertEquals(Config.DEFAULTS.withKeepResizeBorder(false), Titlebar.config());

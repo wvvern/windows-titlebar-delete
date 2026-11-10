@@ -1,5 +1,4 @@
-// Forge build for one Minecraft version, shared by every subproject in versions/<mc>.
-// Uses Essential's fork of Architectury Loom; the version-agnostic core (../core) is compiled into the jar.
+// The Forge build of each subproject in versions/<mc>, which compiles the core (../core) into the jar.
 plugins {
     java
     id("gg.essential.loom")
