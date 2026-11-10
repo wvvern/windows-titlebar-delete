@@ -21,8 +21,6 @@ pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,forge-1.12.2,fabric-26.3
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the harness. With no `-Targets`, the script runs only the two legacy targets.
 
-CI makes a release only when a new tag is pushed. The old tags `v1.0.0.0189` and `v1.0.0.1214` start no run.
-
 ## Jars
 
 | Build | Jars | Path |
@@ -49,7 +47,7 @@ gh workflow run modrinth.yml -f tag=v2.0.0 -f loader=fabric -f mc=1.21.8 -f load
 
 The section is a summary of the net change since the previous tag. It is not a list of commits.
 
-1. Find the previous tag: `git describe --tags --abbrev=0 --exclude 'v1.0.0.*'`. Read all commits since it: `git log --format='%h %s%n%b' vPREV..HEAD`. Version 1.0.0 has two tags with a different format, `v1.0.0.0189` (Forge 1.8.9) and `v1.0.0.1214` (Fabric 1.21.4). For 2.0.0, compare with the two of them.
+1. Find the previous tag: `git describe --tags --abbrev=0`. Read all commits since it: `git log --format='%h %s%n%b' vPREV..HEAD`. For the first tag, read all commits.
 2. Keep only changes that users see: features, fixes of bugs that a released version had, performance, compatibility, config changes. Remove refactors, tests, CI, docs and tool changes.
 3. Remove a bug that was added and fixed between the two tags. Its net change is zero.
 4. Merge commits that change the same thing into one line. Describe the result, not the steps.
