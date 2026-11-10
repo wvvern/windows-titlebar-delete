@@ -38,8 +38,6 @@ Get the jar for your Minecraft version and loader from [Modrinth](https://modrin
 
 Each line of the table has its own jar for each loader. The name of the jar shows the loader and the last Minecraft version of the line, for example `windowstitlebardelete-fabric-2.0.0+1.21.8.jar`.
 
-A `Yes` in the Quilt column shows that Modrinth lists the Fabric jar for Quilt. It does not show a test.
-
 ## Key
 
 The key `Toggle the titlebar` shows or hides the titlebar. The default key is F12. You can change it in the Controls screen, in the category Miscellaneous.
@@ -47,8 +45,6 @@ The key `Toggle the titlebar` shows or hides the titlebar. The default key is F1
 The key works only while no screen is open. It does nothing on the title screen, in a menu, in chat and in an inventory.
 
 The mod remembers the state of the titlebar. When you start the game again, the titlebar is hidden or shown as you left it. A new install starts with no titlebar.
-
-While the titlebar shows, the mod does not change the game window.
 
 ## Config file
 
