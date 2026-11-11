@@ -11,14 +11,15 @@ The mod works only on Windows. On other operating systems it writes one line to 
 Get the jar for your Minecraft version and loader from [Modrinth](https://modrinth.com/mod/windows-titlebar-delete) or from the [GitHub releases](https://github.com/wvvern/windows-titlebar-delete/releases). Put it in your `mods/` folder.
 
 - Fabric needs only Fabric Loader. It does not need Fabric API.
-- Quilt has no jar of its own. Use the Fabric jar, which Modrinth lists for Quilt on Minecraft 1.18.2 and later. The mod is not tested on Quilt.
+- Quilt has no jar of its own. Use the Fabric jar. It is tested on Quilt Loader 0.30.2 with Minecraft 1.16.5 to 1.21.11.
+- On Minecraft 26.1 to 26.3, Quilt is not supported, because Quilt Loader 0.30.2 does not start the mod.
 
 | Minecraft          | Fabric | Quilt | Forge | NeoForge |
 |--------------------|:------:|:-----:|:-----:|:--------:|
 | 1.8.9              |        |       | Yes   |          |
 | 1.12.2             |        |       | Yes   |          |
-| 1.16.5             | Yes    |       | Yes   |          |
-| 1.17.1             | Yes    |       | Yes   |          |
+| 1.16.5             | Yes    | Yes   | Yes   |          |
+| 1.17.1             | Yes    | Yes   | Yes   |          |
 | 1.18.2             | Yes    | Yes   | Yes   |          |
 | 1.19 to 1.19.2     | Yes    | Yes   | Yes   |          |
 | 1.19.4             | Yes    | Yes   | Yes   |          |
@@ -32,11 +33,11 @@ Get the jar for your Minecraft version and loader from [Modrinth](https://modrin
 | 1.21.6 to 1.21.8   | Yes    | Yes   |       | Yes      |
 | 1.21.9 and 1.21.10 | Yes    | Yes   |       | Yes      |
 | 1.21.11            | Yes    | Yes   |       | Yes      |
-| 26.1 to 26.1.2     | Yes    | Yes   |       | Yes      |
-| 26.2               | Yes    | Yes   |       | Yes      |
-| 26.3               | Yes    | Yes   |       | Yes      |
+| 26.1 to 26.1.2     | Yes    |       |       | Yes      |
+| 26.2               | Yes    |       |       | Yes      |
+| 26.3               | Yes    |       |       | Yes      |
 
-Each line of the table has its own jar for each loader. The name of the jar shows the loader and the last Minecraft version of the line, for example `windowstitlebardelete-fabric-2.0.0+1.21.8.jar`.
+Each line of the table has its own jar for each loader, and Quilt uses the Fabric jar. The name of the jar shows the loader and the last Minecraft version of the line, for example `windowstitlebardelete-fabric-2.0.0+1.21.8.jar`.
 
 ## Key
 

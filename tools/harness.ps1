@@ -195,11 +195,16 @@ foreach ($target in $Targets) {
         $dir = Join-Path $root "legacy"; $task = ":${version}:runClientDev"; $runDir = Join-Path $dir "versions\$version\run"; $gradleOptions = ""
         $legacyFile = $commandsFile -replace "\.txt$", "-legacy.txt"
         if (Test-Path $legacyFile) { $commandsFile = $legacyFile }
-    } elseif ($loader -in @("fabric", "forge", "neoforge")) {
+    } elseif ($loader -in @("fabric", "quilt", "forge", "neoforge")) {
         $dir = Join-Path $root "modern"; $task = ":${loader}:${version}:runClient"; $runDir = Join-Path $dir "$loader\versions\$version\run"
         # Gradle then configures only the projects of this target, which is faster and keeps the Loom caches of the other versions apart.
         $gradleOptions = "--configure-on-demand"
-        if ($loader -ne "fabric") { Set-FmlConfig $runDir }
+        if ($loader -eq "quilt") {
+            # A quilt target is the Fabric project with -Pquilt, which starts Quilt Loader with the Fabric release jar in run\quilt\mods.
+            $task = ":fabric:${version}:runClient"; $runDir = Join-Path $dir "fabric\versions\$version\run\quilt"; $gradleOptions += " -Pquilt"
+            & (Join-Path $dir "gradlew.bat") --no-daemon --configure-on-demand -p $dir ":fabric:${version}:releaseJar" | Out-Null
+            if ($LASTEXITCODE) { throw "the release jar of $target did not build" }
+        } elseif ($loader -ne "fabric") { Set-FmlConfig $runDir }
     } else {
         throw "unknown target: $target"
     }

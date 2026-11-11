@@ -178,6 +178,8 @@ For a legacy version, add `legacy/versions/<mc>/gradle.properties` and the versi
 - Each `style` command is a checkpoint with two proofs. Proof 1: the game logs the style that it reads through `JnaWindow`. Proof 2: the script reads the style of the same window from outside the game, with `EnumDesktopWindows` and `GetWindowLong`. The two values must be equal.
 - The header of `tools/harness.ps1` gives the rules for a commands file and for the result of a run.
 - Forge and NeoForge targets of `modern/` get `earlyWindowControl = false` in `config/fml.toml`, so that the game makes its own window as vanilla does.
+- A `quilt-<node>` target has no jar of its own. It builds the Fabric release jar, and then `:fabric:<node>:runClient -Pquilt` starts the dev game on Quilt Loader with only this jar in `run/quilt/mods`. The Quilt Loader version is `quilt_loader_version` in `modern/gradle.properties`.
+- Minecraft 26.1 to 26.3 have no quilt target, because Quilt Loader 0.30.2 starts the game but does not call the entry point of a mod.
 - The dev game of Forge 1.16.5 stops when it loads the models, because Architectury Loom keeps the SRG names of two calls in the Forge patches. Only with `-Pharness`, `modern/forge/build.gradle` adds `forge/dev-1.16.5` with `TransformationMixin`, which gives the game these two methods. No jar has this mixin.
 
 Each target has two runs, one for each commands file:
@@ -208,5 +210,5 @@ pwsh -Command "./tools/harness.ps1 -Targets forge-1.8.9,fabric-1.21.11,neoforge-
 - The harness has no fullscreen step on 1.8.9 and 1.12.2, because LWJGL 2 fullscreen can change the display mode of the real monitor, also from a hidden desktop.
 - With the titlebar hidden in a window that is not maximized, each change to fullscreen and back can make the window taller by the height of the titlebar. The cause is that the mod keeps the outer size of the window when it removes the titlebar. This is not measured. The 1.0.0 mod did the same.
 - The harness runs the dev clients with `earlyWindowControl = false`. The early loading window of Forge and NeoForge in a normal install is the same game window, but no test uses it.
-- Quilt uses the Fabric jar and has no harness run.
+- The Quilt harness run uses the dev game of Loom with the release jar. No test uses a Quilt install from a launcher.
 - A jar declares all patch versions of its Minecraft range, for example 1.21.6 to 1.21.8. Only the build version of each jar has a harness run.
