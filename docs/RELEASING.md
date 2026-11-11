@@ -27,7 +27,7 @@ The node `26.1` builds for Minecraft 26.1.2, so the name of its jar ends in `+26
 - The owner makes the token on Modrinth and sets the secret `MODRINTH_TOKEN` in the GitHub settings. No other person or tool reads or writes the token.
 - The token needs the two scopes "Create versions" and "Write versions". Without "Write versions", `mc-publish` makes a version, cannot complete it, and leaves incomplete duplicate versions on Modrinth.
 - Each jar becomes one Modrinth version with the number `vX.Y.Z+<loader>-<mc>`, for example `v2.0.0+neoforge-1.21.8`.
-- The matrix in `.github/workflows/ci.yml` gives the game versions of each jar. The Fabric jar of 1.18.2 and later has the loaders `fabric` and `quilt` (`fabric_loaders`). Quilt has no jar of its own and no test.
+- The matrix in `.github/workflows/ci.yml` gives the game versions of each jar. The Fabric jar of 1.16.5 to 1.21.11 has the loaders `fabric` and `quilt` (`fabric_loaders`), because Quilt has no jar of its own. The Fabric jar of 26.x has only `fabric`, because no released Quilt Loader starts the mod on these versions (see the Harness section of [ARCHITECTURE.md](ARCHITECTURE.md)).
 - If the upload of one jar fails, delete its incomplete version on Modrinth, then upload the jar from the GitHub release again. Take the values from the matrix:
 
 ```bash

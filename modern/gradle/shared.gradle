@@ -86,10 +86,11 @@ if (loader != 'common') {
             archiveClassifier = ''
         }
     }
+    ext.releaseJarTask = tasks.named(unobfuscated ? 'shadowJar' : 'remapJar')
     tasks.register('releaseJar') {
         group = 'build'
         description = 'Builds the jar to install for this loader and Minecraft version.'
-        dependsOn tasks.named(unobfuscated ? 'shadowJar' : 'remapJar')
+        dependsOn project.releaseJarTask
     }
     tasks.named('assemble') { dependsOn 'releaseJar' }
 }

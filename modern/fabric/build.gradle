@@ -1,3 +1,9 @@
+// Only a Gradle run of runClient alone with -Pquilt puts Quilt Loader in place of Fabric Loader, so no release build changes.
+def quilt = project.hasProperty('quilt') && gradle.startParameter.taskNames.every { it.endsWith('runClient') }
+if (quilt) {
+    ext['loom.platform'] = 'quilt'
+}
+
 apply from: rootProject.file('gradle/shared.gradle')
 
 architectury {
@@ -5,8 +11,33 @@ architectury {
     fabric()
 }
 
+def loader = quilt ? "org.quiltmc:quilt-loader:$project.quilt_loader_version" : "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
+
+if (quilt) {
+    repositories { maven { url 'https://maven.quiltmc.org/repository/release/' } }
+    loom.runs.named('client') { runDir 'run/quilt' }
+    if (project.modImplementation == 'implementation') {
+        // The Loom plugin for a game with no obfuscation does not read quilt_installer.json, which has the libraries and the main class.
+        def loaderJar = configurations.detachedConfiguration(dependencies.create(loader)).singleFile
+        def installer = new groovy.json.JsonSlurper().parse(zipTree(loaderJar).matching { include 'quilt_installer.json' }.singleFile)
+        (installer.libraries.common + installer.libraries.development).each { dependencies.add('runtimeOnly', it.name) }
+        loom.runs.named('client') { mainClass = installer.mainClass.client }
+    }
+    // The jar is a file and not the output of a task, because a build with -Pquilt writes the version of Quilt Loader in the manifest.
+    def quiltMods = tasks.register('quiltMods', Sync) {
+        from { project.releaseJarTask.get().archiveFile.get().asFile }
+        into 'run/quilt/mods'
+    }
+    // Quilt Loader gets the mod only as the release jar in the mods folder, as in an install, so the dev classes go off the classpath.
+    configurations.matching { it.name == 'developmentFabric' }.configureEach { extendsFrom = [] }
+    tasks.named('runClient') {
+        dependsOn quiltMods
+        classpath = files(classpath.from.toList()).minus(sourceSets.main.output + configurations.common)
+    }
+}
+
 dependencies {
-    add(project.modImplementation, "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version")
+    add(project.modImplementation, loader)
 }
 
 processResources {
