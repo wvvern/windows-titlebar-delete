@@ -179,7 +179,7 @@ For a legacy version, add `legacy/versions/<mc>/gradle.properties` and the versi
 - The header of `tools/harness.ps1` gives the rules for a commands file and for the result of a run.
 - Forge and NeoForge targets of `modern/` get `earlyWindowControl = false` in `config/fml.toml`, so that the game makes its own window as vanilla does.
 - A `quilt-<node>` target has no jar of its own. It builds the Fabric release jar, and then `:fabric:<node>:runClient -Pquilt` starts the dev game on Quilt Loader with only this jar in `run/quilt/mods`. The Quilt Loader version is `quilt_loader_version` in `modern/gradle.properties`.
-- Quilt Loader 0.30.2 starts Minecraft 26.1 to 26.3 but does not call the entry point of a mod, so these three nodes set `quilt_loader_version` to 0.31.0-beta.6.
+- Minecraft 26.1 to 26.3 have no quilt target, because Quilt Loader 0.30.2 starts the game but does not call the entry point of a mod.
 - The dev game of Forge 1.16.5 stops when it loads the models, because Architectury Loom keeps the SRG names of two calls in the Forge patches. Only with `-Pharness`, `modern/forge/build.gradle` adds `forge/dev-1.16.5` with `TransformationMixin`, which gives the game these two methods. No jar has this mixin.
 
 Each target has two runs, one for each commands file:

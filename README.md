@@ -12,7 +12,7 @@ Get the jar for your Minecraft version and loader from [Modrinth](https://modrin
 
 - Fabric needs only Fabric Loader. It does not need Fabric API.
 - Quilt has no jar of its own. Use the Fabric jar. It is tested on Quilt Loader 0.30.2 with Minecraft 1.16.5 to 1.21.11.
-- On Minecraft 26.1 to 26.3, Quilt Loader 0.30.2 does not start the mod. Quilt Loader 0.31.0-beta.6 starts it, and the mod is tested with that version.
+- On Minecraft 26.1 to 26.3, Quilt is not supported, because Quilt Loader 0.30.2 does not start the mod.
 
 | Minecraft          | Fabric | Quilt | Forge | NeoForge |
 |--------------------|:------:|:-----:|:-----:|:--------:|
@@ -33,11 +33,11 @@ Get the jar for your Minecraft version and loader from [Modrinth](https://modrin
 | 1.21.6 to 1.21.8   | Yes    | Yes   |       | Yes      |
 | 1.21.9 and 1.21.10 | Yes    | Yes   |       | Yes      |
 | 1.21.11            | Yes    | Yes   |       | Yes      |
-| 26.1 to 26.1.2     | Yes    | Beta  |       | Yes      |
-| 26.2               | Yes    | Beta  |       | Yes      |
-| 26.3               | Yes    | Beta  |       | Yes      |
+| 26.1 to 26.1.2     | Yes    |       |       | Yes      |
+| 26.2               | Yes    |       |       | Yes      |
+| 26.3               | Yes    |       |       | Yes      |
 
-`Beta` shows that only a beta version of Quilt Loader starts the mod. Each line of the table has its own jar for each loader, and Quilt uses the Fabric jar. The name of the jar shows the loader and the last Minecraft version of the line, for example `windowstitlebardelete-fabric-2.0.0+1.21.8.jar`.
+Each line of the table has its own jar for each loader, and Quilt uses the Fabric jar. The name of the jar shows the loader and the last Minecraft version of the line, for example `windowstitlebardelete-fabric-2.0.0+1.21.8.jar`.
 
 ## Key
 
