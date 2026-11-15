@@ -34,6 +34,8 @@ The node `26.1` builds for Minecraft 26.1.2, so the name of its jar ends in `+26
 gh workflow run modrinth.yml -f tag=v2.0.0 -f loader=fabric -f mc=1.21.8 -f loaders="fabric quilt" -f game_versions="1.21.6 1.21.7 1.21.8"
 ```
 
+- Modrinth guesses the environment of each version from the jar, and it marks the Forge and NeoForge jars "client and server". After the uploads, the CI job `modrinth-environment` sets each version to client-only. After an upload by hand, run `gh workflow run modrinth-environment.yml`.
+
 ## Changelog rules
 
 The section is a summary of the net change since the previous tag. It is not a list of commits.

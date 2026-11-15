@@ -227,3 +227,11 @@ jobs:
           loaders: neoforge
           game-versions: ${{ matrix.target.game_versions }}
           changelog: ${{ needs.check.outputs.notes }}
+
+  modrinth-environment:
+    name: Modrinth environment
+    # Runs also when an upload failed, so that each upload that passed gets the correct environment.
+    if: ${{ !cancelled() && needs.modrinth.result != 'skipped' }}
+    needs: [modrinth]
+    uses: ./.github/workflows/modrinth-environment.yml
+    secrets: inherit
